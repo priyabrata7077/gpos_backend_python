@@ -116,13 +116,13 @@ class Wastage(models.Model):
     date_entered = models.DateField()
     reason = models.CharField(max_length=200)
 
-'''
-class Waste_Management(models.Model):
+
+class Item_Return_Management(models.Model):
     product_name = models.CharField(max_length=50)
     customer_returned = models.ForeignKey(Customer , on_delete=models.DO_NOTHING , null=True)
     employee_handled = models.ForeignKey(Employee , on_delete=models.DO_NOTHING)
     date_and_time_of_return = models.DateTimeField()
     reson_for_return = models.CharField(max_length=200)
-    
-'''
+  
+
     
