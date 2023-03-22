@@ -109,4 +109,20 @@ class Day_Wise_Employee_Management(models.Model):
     orders_handled = models.ForeignKey(Orders , on_delete=models.DO_NOTHING)
 
 
+class Wastage(models.Model):
+    product_name = models.ForeignKey(Product , on_delete=models.DO_NOTHING)
+    quantity_type = models.CharField(max_length=10)
+    wasted_amount = models.IntegerField()
+    date_entered = models.DateField()
+    reason = models.CharField(max_length=200)
+
+'''
+class Waste_Management(models.Model):
+    product_name = models.CharField(max_length=50)
+    customer_returned = models.ForeignKey(Customer , on_delete=models.DO_NOTHING , null=True)
+    employee_handled = models.ForeignKey(Employee , on_delete=models.DO_NOTHING)
+    date_and_time_of_return = models.DateTimeField()
+    reson_for_return = models.CharField(max_length=200)
+    
+'''
     
