@@ -3,13 +3,14 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import SubCategory , ProductInventoryManagement , Customer
-from .serializer import SubCategorySerializer , InventorySerializer , CustomerSerializer
+from .models2 import Owner , Business
+from .serializer import OwnerSerializer , BusinessSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
-
-
 import json
+
+'''
 class SubCategoryGetView(APIView):
     def get(self , response):
         data = ProductInventoryManagement.objects.all()
@@ -42,5 +43,21 @@ def handle_customer_view(request):
                 return Response(e)
         else: 
             return Response('Nothing Bro')
+    
+'''
+@api_view(['GET' , 'POST'])
+def handle_owner(request):
+    if request.method == 'GET':
+        owner_data = Owner.objects.all()
+        serializer = OwnerSerializer(owner_data, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        data = request.data
+        serializer = OwnerSerializer(data)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response({'Broo What u did?'})        
         
         

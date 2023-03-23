@@ -1,29 +1,16 @@
 from rest_framework import serializers
 from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
+from .models2 import Owner , Business
 
 
-
-class InventorySerializer(serializers.ModelSerializer):
+class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = ProductInventoryManagement
-        fields = ['name' , 'quantity_type' , 'quantity']
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = Product
-        fields ='__all__'
-
-class SubCategorySerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = SubCategory
+        model = Owner
         fields = '__all__'
-
-class CustomerSerializer(serializers.ModelSerializer):
+    
+class BusinessSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = Customer
-        fields = ['name' , 'phone']
+        model = Business
+        fields = '__all__'
