@@ -2,7 +2,7 @@ import React from 'react'
 import { useState } from 'react'
 import './addOwner.css'
 import { useNavigate } from 'react-router-dom'
-
+import { useEffect } from 'react'
 const AddOwnerUi = () => {
     const navigation = useNavigate()
     const [name ,setName] = useState('')
@@ -15,6 +15,12 @@ const AddOwnerUi = () => {
     const [country , setCountry] = useState('')
     const [pan , setPan] = useState('')
     const [password , setPassword] = useState('')
+
+    const [ownerID , setOwnerID] = useState('')
+
+            
+        
+   
     const currentdate = new Date()
     const Date_data_in_proper_format = currentdate.toLocaleDateString('en-CA' , {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\//g , '-')
     const data =     {
@@ -36,18 +42,22 @@ const AddOwnerUi = () => {
 
         console.log( `${typeof name} ${typeof email} ${typeof contact} ${typeof whatsapp}
         ${typeof address} ${typeof city} ${typeof pincode} ${typeof country} ${typeof pan} ${typeof Date_data_in_proper_format} `) 
+        
         fetch('http://127.0.0.1:8000/add-owner' , {
             method:'POST',
             body:api_post_data,
             headers:{
                 'Content-type':'application/json'
             }
-        }).then(response => {console.log(response)}).catch(error => {
+        }).then(response => response.json()).then(data => {console.log(`${data.id} - ${typeof data.id}`)
+                                                            setOwnerID(data)    
+                                                        }).catch(error => {
             console.error(error);
         })
+        
         navigation('/register-business')
         }
-       
+    
     return (
         <>
         
@@ -62,6 +72,7 @@ const AddOwnerUi = () => {
             <input className='Owners-Input' placeholder='PIN Code' onChange={(event) => {setPincode(event.target.value)}} />
             <input className='Owners-Input' placeholder='Country' onChange={(event) => {setCountry(event.target.value)}} />
             <input className='Owners-Input' placeholder='Your Pan Card Number' onChange={(event) => {setPan(event.target.value)}} />
+            <input className='Owners-Input' placeholder='Password' type='password' onChange={(event) => {setPassword(event.target.value)}} />
             <button onClick={() => {handleClick()}} className='AddOwnerButton' >REGISTER</button>
         </div>
         </>
