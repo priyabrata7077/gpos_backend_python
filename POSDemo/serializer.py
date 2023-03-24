@@ -7,7 +7,8 @@ class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Owner
-        fields = '__all__'
+        fields = ['name', 'email' , 'password' , 'contact_number' , 'whatsapp_number', 'address' , 'city', 'pin' , 'country' , 'pan_card_number' , 'date_of_entry']
+        
     
 class BusinessSerializer(serializers.ModelSerializer):
     

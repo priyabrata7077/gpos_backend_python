@@ -54,10 +54,29 @@ def handle_owner(request):
 
     if request.method == 'POST':
         data = request.data
-        serializer = OwnerSerializer(data)
+        serializer = OwnerSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
+            return Response({'Done':True})
         else:
-            return Response({'Broo What u did?'})        
-        
+            return Response({'Broo What u did?'})
+
+@api_view(['GET' , 'POST'])        
+def handle_business(request):
+    if request.method == 'GET':
+        business_data = Business.objects.all()
+        serializer = BusinessSerializer(business_data, many=True)
+        return Response(serializer.data) 
+    
+    if request.method == 'POST':
+       
+        data = request.data
+        serializer = BusinessSerializer(data = data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'Done':True})
+        else:
+            return Response({'Bro what u looking for'})
+
+            
         

@@ -4,10 +4,18 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import AddOwnerUi from './screens/addOwner'
+import AddBusinessUi from './screens/addBusiness'
+import {BrowserRouter ,Routes , Route } from 'react-router-dom'
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AddOwnerUi />
+    <BrowserRouter>
+      <Routes>
+      <Route exact path={"/"} element={<AddOwnerUi/>} ></Route>
+      <Route exact path={"/register-business"} element={<AddBusinessUi/>} ></Route>
+      </Routes>
+    </BrowserRouter>
+    
   </React.StrictMode>
 );
 
