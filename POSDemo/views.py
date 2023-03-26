@@ -47,10 +47,26 @@ def handle_customer_view(request):
 '''
 @api_view(['GET' , 'POST'])
 def handle_owner(request):
+    owner_email = request.query_params.get('userEmail')
+    owner_pass = request.query_params.get('pass')
+    if owner_email == None or owner_pass == None:
+        return Response({'invalid input'})
+    print(f'{owner_email}  ----------  {owner_pass}')
     if request.method == 'GET':
-        owner_data = Owner.objects.all()
-        serializer = OwnerSerializer(owner_data, many=True)
-        return Response(serializer.data)
+        owner_data = Owner.objects.filter(email =  owner_email)
+        if len(owner_data) != 0:
+            owner_data_dict = list(owner_data.values('name' , 'password'))
+            owner_password_db = owner_data_dict[0]['password']
+            print(owner_data_dict)
+            if owner_pass == owner_password_db:
+                print(owner_password_db)
+                return Response({'auth' : 'success' , 'name':owner_data_dict[0]['name']})
+            else:
+                return Response({'auth failed'})
+        elif len(owner_data) == 0:
+            return Response({'no user'})
+        
+        
 
     if request.method == 'POST':
         data = request.data

@@ -71,7 +71,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'GPOS2', 
         'USER': 'postgres', 
-        'PASSWORD': 'riddhi',
+        'PASSWORD': 'rid#123#321',
         'HOST': '127.0.0.1', 
         'PORT': '5432',
     }
@@ -119,6 +119,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = [
-    'http://localhost:3000',
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    # Add more origins as necessary
 ]

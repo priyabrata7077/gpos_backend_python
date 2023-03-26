@@ -6,16 +6,24 @@ import reportWebVitals from './reportWebVitals';
 import AddOwnerUi from './screens/addOwner'
 import AddBusinessUi from './screens/addBusiness'
 import {BrowserRouter ,Routes , Route } from 'react-router-dom'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { QueryClientProvider , QueryClient } from 'react-query';
+import SignInUi from './screens/signUp';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const queryClient = new QueryClient()
 root.render(
   <React.StrictMode>
+  <QueryClientProvider client = {queryClient}>
     <BrowserRouter>
+   
       <Routes>
-      <Route exact path={"/"} element={<AddOwnerUi/>} ></Route>
+      <Route exact path={"/"} element = {<SignInUi />}></Route>
+      <Route exact path={"/register-owner"} element={<AddOwnerUi/>} ></Route>
       <Route exact path={"/register-business"} element={<AddBusinessUi/>} ></Route>
       </Routes>
     </BrowserRouter>
-    
+    </QueryClientProvider>
   </React.StrictMode>
 );
 
