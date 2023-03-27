@@ -10,8 +10,8 @@ from POSDemo import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('get-owner' , views.handle_owner , name='sub-categories'),
-    path('add-owner' , views.handle_owner , name = 'add-owner'),
+    
+    path('login', views.handle_login , name = 'add-owner'),
     path('add-business' , views.handle_business , name='add-business' )
 ]
 

@@ -3,6 +3,8 @@ import { useState } from 'react'
 import './addOwner.css'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
+
+
 const AddOwnerUi = () => {
     const navigation = useNavigate()
     const [name ,setName] = useState('')

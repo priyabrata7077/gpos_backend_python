@@ -37,7 +37,25 @@ class Business(models.Model):
         return f'{self.owned_by} - {self.business_name}'
 
 
+     
 
-
-
+class storeMaster(models.Model):
     
+    store_name = models.CharField(max_length=100 , blank=False)
+    store_location = models.CharField(max_length=200 , blank=False)
+    associated_business = models.ForeignKey(Business , related_name='business' , on_delete=models.DO_NOTHING)
+   
+class storeInventoryMaster(models.Model):
+     updated_at = models.DateTimeField()
+     product_name = models.CharField(max_length=100)
+     product_quantity_type = models.CharField(max_length=5)
+     product_quantity = models.CharField(max_length=20)
+     store = models.OneToOneField(storeMaster , on_delete=models.DO_NOTHING , null=True)
+
+
+class auth(models.Model):
+    user_name = models.CharField(max_length=30)
+    user_email = models.CharField(max_length=100)
+    token = models.CharField(max_length=32 , blank=False)
+    def __str__(self):
+        return f'{self.user_name} - {self.token} '

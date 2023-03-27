@@ -9,7 +9,7 @@ import {BrowserRouter ,Routes , Route } from 'react-router-dom'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { QueryClientProvider , QueryClient } from 'react-query';
 import SignInUi from './screens/signUp';
-
+import DashBoardUI from './screens/dashBoard';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 const queryClient = new QueryClient()
 root.render(
@@ -21,6 +21,7 @@ root.render(
       <Route exact path={"/"} element = {<SignInUi />}></Route>
       <Route exact path={"/register-owner"} element={<AddOwnerUi/>} ></Route>
       <Route exact path={"/register-business"} element={<AddBusinessUi/>} ></Route>
+      <Route exact path = {"/dashboard"} element={<DashBoardUI />}></Route>
       </Routes>
     </BrowserRouter>
     </QueryClientProvider>

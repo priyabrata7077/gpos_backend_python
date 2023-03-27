@@ -2,50 +2,76 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import SubCategory , ProductInventoryManagement , Customer
-from .models2 import Owner , Business
-from .serializer import OwnerSerializer , BusinessSerializer
+from django.forms.models import model_to_dict
+from .models import SubCategory, ProductInventoryManagement, Customer
+from .models2 import Owner, Business, auth
+from .serializer import OwnerSerializer, BusinessSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
 import json
+import string
+import secrets
+import hashlib
 
 
-@api_view(['GET' , 'POST'])
-def handle_owner(request):
-    owner_email = request.query_params.get('userEmail')
-    owner_pass = request.query_params.get('pass')
-    print(f'{owner_email}  ----------  {owner_pass}')
-    if owner_email == None or owner_pass == None:
-        return Response({'invalid input'})
-    if owner_email == '' or owner_pass == '':
-        return Response({'invalid input'})
-    
-    if request.method == 'GET':
-        owner_data = Owner.objects.filter(email =  owner_email)
-        if len(owner_data) != 0:
-            owner_data_dict = list(owner_data.values('name' , 'password'))
-            owner_password_db = owner_data_dict[0]['password']
-            print(owner_data_dict)
-            if owner_pass == owner_password_db:
-                print(owner_password_db)
-                return Response({'auth' : 'success' , 'name':owner_data_dict[0]['name']})
-            else:
-                return Response({'auth failed'})
-        elif len(owner_data) == 0:
-            return Response({'no user'})
-        
-        
+def pass_encrypt(password):
+    hash_obj = hashlib.sha256(password.encode())
+    pass_crypt = hash_obj.hexdigest()
+    return pass_crypt
 
-    if request.method == 'POST':
-        data = request.data
-        print(f'{data} ---------------------- {type(data)}')
-        serializer = OwnerSerializer(data = data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'id':serializer.instance.id})
-        else:
-            return Response({'Broo What u did?':serializer.errors})
+
+def gen_token():
+    choices = string.ascii_letters + string.digits
+    token = ''.join((secrets.choice(choices) for i in range(32)))
+    return token
+
+
+@api_view(['GET', 'POST'])
+def handle_login(request):
+        if request.method == 'POST':
+            login_data = request.data
+            login_data_dict = dict(login_data)
+            if 'email' in login_data_dict.keys():
+                print(
+                    f'{login_data_dict["email"]} -------- {type(login_data_dict)}')
+                user_name = login_data_dict['username'][0]
+                email = login_data_dict['email'][0]
+                passwd = login_data_dict['password'][0]
+                print(f'{user_name} ------- {email} ------- {passwd}')
+                data_from_db = Owner.objects.filter(name=user_name)
+                if len(data_from_db) == 0:
+                    return Response({'no user'})
+                else:
+                    data_from_db_values = list(
+                        data_from_db.values('name', 'email', 'password'))
+                    if email != data_from_db_values[0]['email']:
+                        return Response({'Invalid Email'})
+                    if passwd != data_from_db_values[0]['password']:
+                        return Response({'invalid password'})
+
+                    # checking the the user has already been logged in with the token
+                    # getting the auth
+                    user_token = gen_token()
+                    user_auth = auth(
+                        user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token)
+                    user_auth.save()
+                    return Response({'auth': 'success', 'token': user_token})
+            if 'token' in login_data_dict.keys():
+                checK_token = auth.objects.filter(token = login_data_dict['token'][0])
+                if len(checK_token) == 0:
+                    return Response({'invalid token'})
+                return Response({'token valid'})
+                
+
+       
+
+
+
+
+
+
+
 
 @api_view(['GET' , 'POST'])        
 def handle_business(request):
