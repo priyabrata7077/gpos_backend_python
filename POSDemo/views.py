@@ -29,7 +29,10 @@ def gen_token():
 
 @api_view(['GET', 'POST'])
 def handle_login(request):
+        user_agent = request.META
+        print(f'{user_agent} -------- {type(user_agent)}')
         if request.method == 'POST':
+            
             login_data = request.data
             login_data_dict = dict(login_data)
             if 'email' in login_data_dict.keys():
