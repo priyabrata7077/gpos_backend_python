@@ -45,23 +45,33 @@ def handle_login(request):
                 else:
                     data_from_db_values = list(
                         data_from_db.values('name', 'email', 'password'))
+                    if email != data_from_db_values[0]['email'] and passwd != data_from_db_values[0]['password']:
+                        return Response({'invalid email and password'})
                     if email != data_from_db_values[0]['email']:
                         return Response({'Invalid Email'})
                     if passwd != data_from_db_values[0]['password']:
                         return Response({'invalid password'})
 
                     # checking the the user has already been logged in with the token
-                    # getting the auth
-                    user_token = gen_token()
-                    user_auth = auth(
-                        user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token)
-                    user_auth.save()
-                    return Response({'auth': 'success', 'token': user_token})
+                    # checking if the user is already in the auth db.
+                    check_user_in_auth = list(auth.objects.filter(user_email = email).values('token'))
+
+                    if len(check_user_in_auth) == 0:
+                        user_token = gen_token()
+                        user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token)
+                        user_auth.save()
+                        return Response({'auth': 'success', 'token': user_token})
+                    else:
+                        
+                        print(check_user_in_auth[0]['token'])
+                        return Response({'user': 'validated' , 'token':check_user_in_auth[0]['token']})
             if 'token' in login_data_dict.keys():
-                checK_token = auth.objects.filter(token = login_data_dict['token'][0])
+                checK_token = auth.objects.filter(token = login_data_dict['token'][0]).values('user_name')
                 if len(checK_token) == 0:
                     return Response({'invalid token'})
-                return Response({'token valid'})
+                else:
+                    user_of_token = list(checK_token)[0]['user_name']
+                    return Response({'token' : 'valid' , 'user': user_of_token })
                 
 
        
