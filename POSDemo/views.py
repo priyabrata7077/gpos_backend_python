@@ -9,12 +9,14 @@ from .serializer import OwnerSerializer, BusinessSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
+from datetime import datetime, timezone
 import json
 import string
 import secrets
 import hashlib
+import json
 
-
+#Custom Helper Functions ########################################################################
 def pass_encrypt(password):
     hash_obj = hashlib.sha256(password.encode())
     pass_crypt = hash_obj.hexdigest()
@@ -26,13 +28,63 @@ def gen_token():
     token = ''.join((secrets.choice(choices) for i in range(32)))
     return token
 
+def clean_dict_to_serialize(data_dict):
+    for i in data_dict.keys():
+        data_dict[i] = data_dict[i][0]
+    
+    return data_dict
+def expiry_time_calc(seconds_to_add):
+    dt_obj = datetime.today()
+    time_now_in_seconds = dt_obj.timestamp()
+    expt_time = time_now_in_seconds+seconds_to_add
+    
+    return expt_time
+
+def check_token_validity(token_expiry_from_db):
+    timestamp_now = expiry_time_calc(0)
+    exp_dif = token_expiry_from_db - timestamp_now  
+    exp_time_rev = timestamp_now - token_expiry_from_db
+    print()
+    print('))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))')
+    print(exp_time_rev)
+    print()
+    print('((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))')
+    if exp_dif >= 60:
+        return True
+    else:
+        return False
+
+#################################################################################################
+
+# token data in header 'HTTP_AUTHORIZATION': 'Bearer oEYOaVC955Onygsp3jjNmNQ8NTFUEDcv'
 
 @api_view(['GET', 'POST'])
 def handle_login(request):
-        user_agent = request.META
-        print(f'{user_agent} -------- {type(user_agent)}')
+        header_info = request.META
+        ip_of_host_from_header = header_info['REMOTE_ADDR']
+        print(f'{header_info} -------- {type(header_info)}')
+        print('-------------------------------------------------------------------')
         if request.method == 'POST':
-            
+            if 'HTTP_BEARER_TOKEN' in header_info.keys():
+                check_token_queryset = auth.objects.filter(token=header_info['HTTP_BEARER_TOKEN'])
+                checK_token = check_token_queryset.values('user_name' , 'token_expiry')
+                #print(int(checK_token[0]['token_expiry']))
+                if len(checK_token) == 0:
+                    return Response({'invalid token'})
+                else:
+                    if check_token_validity(int(checK_token[0]['token_expiry'])):
+                        
+                        user_of_token = list(checK_token)[0]['user_name']
+                        return Response({'token' : 'valid' , 'user': user_of_token })
+                    else:
+                        check_token_queryset.delete()
+                        return Response({'Token Validity': ' Expired', 'token deleted' : True})
+                '''              
+            if 'HTTP_BEARER_TOKEN' not in header_info.keys():
+                return Response({'No valid token found '})
+                pass    
+                '''
+
             login_data = request.data
             login_data_dict = dict(login_data)
             if 'email' in login_data_dict.keys():
@@ -61,13 +113,15 @@ def handle_login(request):
 
                     if len(check_user_in_auth) == 0:
                         user_token = gen_token()
-                        user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token)
+                        user_token_expiry = expiry_time_calc(60)
+                        user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header)
                         user_auth.save()
                         return Response({'auth': 'success', 'token': user_token})
                     else:
                         
                         print(check_user_in_auth[0]['token'])
                         return Response({'user': 'validated' , 'token':check_user_in_auth[0]['token']})
+'''            
             if 'token' in login_data_dict.keys():
                 checK_token = auth.objects.filter(token = login_data_dict['token'][0]).values('user_name')
                 if len(checK_token) == 0:
@@ -75,10 +129,9 @@ def handle_login(request):
                 else:
                     user_of_token = list(checK_token)[0]['user_name']
                     return Response({'token' : 'valid' , 'user': user_of_token })
-                
+'''                
 
        
-
 
 
 
@@ -96,13 +149,53 @@ def handle_business(request):
     if request.method == 'POST':
        
         data = request.data
-        data_from_frontend = json.loads(data)
-        serializer = BusinessSerializer(data = data_from_frontend)
+        print(data)
+        data_dict = dict(data)
+        print(data_dict)
+        
+        #here I'm fist getting the owner data from the Owner model with .filter method and getting its primary_key with .values method which gives a dictionary in then converting the whole thing into a list slicing it at the zeroth index wich gives us the data dictionary {'pk' : int_value}.
+        owner_pk_from_db = list(Owner.objects.filter(name=data_dict['owned_by'][0]).values('pk'))[0]['pk']
+        print(owner_pk_from_db)
+        data_dict['owned_by'] = [f'{owner_pk_from_db}']
+        print(data_dict)
+        
+        #converting the modified python dict back to json data
+        clean_data_dict = clean_dict_to_serialize(data_dict)
+        print(clean_data_dict)
+        #data_dict['owned_by'] = Owner.objects.filter(name=data_dict['owned_by']).values('pk')
+        
+        #data_from_frontend = json.loads(data)
+        serializer = BusinessSerializer(data = clean_data_dict)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         else:
-            return Response({'Bro what u looking for' : serializer.errors})
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
 
             
+@api_view(['POST'])
+def handle_owner(request):
+    if request.method =='POST':
+        header_info = request.META
+        ip_of_host_from_header = header_info['REMOTE_ADDR']
+        data = request.data
         
+        print(f'{data} ============================================= {type(data)}')
+        serializer = OwnerSerializer(data = data)
+        if serializer.is_valid():
+            user_token = gen_token()
+            user_token_expiry = expiry_time_calc(30)
+            user_auth = auth(user_name=data['name'], user_email=data['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header)
+            user_auth.save()
+            serializer.save()
+            return Response({'user added':True , 'generated token':user_token})
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})

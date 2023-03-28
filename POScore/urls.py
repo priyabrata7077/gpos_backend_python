@@ -12,7 +12,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('login', views.handle_login , name = 'add-owner'),
-    path('add-business' , views.handle_business , name='add-business' )
+    path('add-business' , views.handle_business , name='add-business' ),
+    path('add-owner' , views.handle_owner , name = 'add-owner' )
 ]
 
 
