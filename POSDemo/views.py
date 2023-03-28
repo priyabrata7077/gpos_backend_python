@@ -36,43 +36,50 @@ def clean_dict_to_serialize(data_dict):
 def expiry_time_calc(seconds_to_add):
     dt_obj = datetime.today()
     time_now_in_seconds = dt_obj.timestamp()
-    expt_time = time_now_in_seconds+seconds_to_add
+    expt_time = int(time_now_in_seconds)+seconds_to_add
     
     return expt_time
 
 def check_token_validity(token_expiry_from_db):
+    #token_expiry_from_db = float(token_expiry_from_db)  
     timestamp_now = expiry_time_calc(0)
-    exp_dif = token_expiry_from_db - timestamp_now  
+    print(f'{token_expiry_from_db} ------------ >>>>>>>>>>>>>>>>>>> -------------')
+    print(f'{timestamp_now} ------- ================= ------------ ')
+    
     exp_time_rev = timestamp_now - token_expiry_from_db
+    exp_dif = token_expiry_from_db - timestamp_now  
+    
     print()
     print('))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))')
-    print(exp_time_rev)
+    print(exp_dif)
     print()
     print('((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))')
-    if exp_dif >= 60:
-        return True
-    else:
+    if exp_dif <= 0:
         return False
+    else:
+        return True
 
 #################################################################################################
 
 # token data in header 'HTTP_AUTHORIZATION': 'Bearer oEYOaVC955Onygsp3jjNmNQ8NTFUEDcv'
-
 @api_view(['GET', 'POST'])
 def handle_login(request):
         header_info = request.META
         ip_of_host_from_header = header_info['REMOTE_ADDR']
-        print(f'{header_info} -------- {type(header_info)}')
+        #print(f'{header_info} -------- {type(header_info)}')
         print('-------------------------------------------------------------------')
         if request.method == 'POST':
             if 'HTTP_BEARER_TOKEN' in header_info.keys():
                 check_token_queryset = auth.objects.filter(token=header_info['HTTP_BEARER_TOKEN'])
-                checK_token = check_token_queryset.values('user_name' , 'token_expiry')
+                checK_token = auth.objects.filter(token=header_info['HTTP_BEARER_TOKEN']).values('user_name' , 'token_expiry')
+                print(f'{checK_token} ------- queryset')
                 #print(int(checK_token[0]['token_expiry']))
                 if len(checK_token) == 0:
                     return Response({'invalid token'})
                 else:
-                    if check_token_validity(int(checK_token[0]['token_expiry'])):
+                    token_check_condition = check_token_validity(int(checK_token[0]['token_expiry']))
+                    print(f'{token_check_condition} ----- True hai bro')
+                    if  token_check_condition == True:
                         
                         user_of_token = list(checK_token)[0]['user_name']
                         return Response({'token' : 'valid' , 'user': user_of_token })
@@ -113,7 +120,7 @@ def handle_login(request):
 
                     if len(check_user_in_auth) == 0:
                         user_token = gen_token()
-                        user_token_expiry = expiry_time_calc(60)
+                        user_token_expiry = expiry_time_calc(20)
                         user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header)
                         user_auth.save()
                         return Response({'auth': 'success', 'token': user_token})
