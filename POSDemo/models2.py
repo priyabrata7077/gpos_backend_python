@@ -4,7 +4,7 @@ class Owner(models.Model):
    
     name = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)
-    password = models.CharField(blank=False , max_length=100)
+    password = models.CharField(blank=False , max_length=100 , unique=True)
     contact_number = models.CharField(blank=False , max_length=10)
     whatsapp_number = models.CharField(max_length=10 , blank=True)
     address = models.CharField(max_length=300)
@@ -15,7 +15,7 @@ class Owner(models.Model):
     date_of_entry = models.DateField(blank=False)
 
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.name} - {self.pk}'
 
 
 class Business(models.Model):
@@ -34,17 +34,20 @@ class Business(models.Model):
     data_entered_on = models.DateField()
 
     def __str__(self):
-        return f'{self.owned_by} - {self.business_name}'
+        return f'{self.owned_by} - {self.business_name} - {self.pk}'
 
 class storeMaster(models.Model):
     
     store_name = models.CharField(max_length=100 , blank=False)
     store_location = models.CharField(max_length=200 , blank=False)
     associated_business = models.ForeignKey(Business , related_name='business' , on_delete=models.DO_NOTHING)
+    def __str__(self):
+        return f'{self.store_name} + {self.associated_business}'
 
 class auth(models.Model):
-    user_name = models.CharField(max_length=30)
+    user_name = models.CharField(max_length=100)
     user_email = models.CharField(max_length=100)
+    user_password = models.CharField(max_length=100 , null=True , blank=False )
     user_ip = models.CharField(blank=True , max_length=20)
     token = models.CharField(max_length=32 , blank=False)
     token_expiry = models.CharField(blank=True , null=True , max_length=200)
@@ -57,20 +60,27 @@ class auth(models.Model):
 class BusinessInventoryMaster(models.Model):
     updated_at = models.DateTimeField()
     product_name = models.CharField(max_length=150)
-    product_quantity_type = models.CharField(max_length=5)
+    product_quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' ,'pieces') , ('LTR' ,'litre')])
     product_quantity = models.CharField(max_length=20)
+    action = models.CharField(max_length=7 , choices=[('ADDED' ,'product added') , ('REMOVED' , 'product removed')] , null=True)
+    price_per_unit = models.CharField(max_length=10 , null=True)
     associated_business = models.OneToOneField(Business , on_delete=models.DO_NOTHING , null=True)
 
+    def __str__(self):
+        return f'{self.product_name} + {self.action} + {self.associated_business}'
 
    
 class storeInventoryMaster(models.Model):
     updated_at = models.DateTimeField()
     product_name = models.CharField(max_length=100)
-    product_quantity_type = models.CharField(max_length=5)
+    product_quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' ,'pieces') , ('LTR' ,'litre')] )
     product_quantity = models.CharField(max_length=20)
-    store = models.OneToOneField(storeMaster , on_delete=models.DO_NOTHING , null=True)
+    action = models.CharField(max_length=7 , choices=[('ADDED' ,'product added') , ('REMOVED' , 'product removed')] , null=True)
+    price_per_unit = models.CharField(max_length=10 , null=True)
+    associated_store = models.OneToOneField(storeMaster , on_delete=models.DO_NOTHING , null=True)
     
-
+    def __str__(self):
+        return f'{self.product_name} - {self.associated_store}'
 
 
 
