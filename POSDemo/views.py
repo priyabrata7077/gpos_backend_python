@@ -2,10 +2,10 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.forms.models import model_to_dict
-from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer
+#from django.forms.models import model_to_dict
+#from .models import SubCategory, ProductInventoryManagement, Customer
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -15,12 +15,9 @@ import string
 import secrets
 import hashlib
 import json
-
+from dateutil import tz
 #Custom Helper Functions ########################################################################
-def pass_encrypt(password):
-    hash_obj = hashlib.sha256(password.encode())
-    pass_crypt = hash_obj.hexdigest()
-    return pass_crypt
+
 
 
 def gen_token():
@@ -59,7 +56,7 @@ def check_token_expiry(token_expiry_from_db):
     else:
         return True
 
-def check_token_validity(token_from_response , need_business_id=True):
+def check_token_validity(token_from_response , need_business_id=True , need_user=False):
     token = auth.objects.filter(token = token_from_response).values('user_name' , 'token_expiry' , 'user_password' )
     
     print(token)
@@ -71,19 +68,39 @@ def check_token_validity(token_from_response , need_business_id=True):
         user_id_of_the_token = Owner.objects.filter(name = token_list[0]['user_name'] , password = token_list[0]['user_password'] ).values('pk')
         user_id_of_the_token = str(list(user_id_of_the_token)[0]['pk'])
         print(f'{user_id_of_the_token} +++++++++++++++++++++++++++++++++++++++++++++++++++')
+
         if need_business_id:
-            associated_business_id = Business.objects.filter(owned_by = user_id_of_the_token).values('pk')
-            print('----------------------------------------------------')
-            print(f'{user_id_of_the_token} -- {associated_business_id}')
-            print('----------------------------------------------------')
-            return True , token_expiry , str(list(associated_business_id)[0]['pk'])
+            associated_business_id = list(Business.objects.filter(owned_by = user_id_of_the_token).values('pk'))[0]['pk']
+            if need_user == True:
+                print('------------Returning User ID and Associated Business Id BRO-------------')
+                print(f'{user_id_of_the_token} -- {associated_business_id}')
+                print('----------------------------------------------------')
+                
+                return True , token_expiry , user_id_of_the_token , associated_business_id
+            else:
+                print('----------------------------------------------------')
+                print(f'{user_id_of_the_token} -- {associated_business_id}')
+                print('----------------------------------------------------')
+                return True , token_expiry , str(list(associated_business_id)[0]['pk'])
         if need_business_id == False:
             return True , token_expiry , user_id_of_the_token
     else:
         return False , None , None
         
-
-
+def hash_pass(passwd):
+    hash_object = hashlib.sha256(passwd.encode())
+    pass_hash = hash_object.hexdigest()
+    print(f'raw{passwd} - - - - - - - - - - - - - - - - - - - - - - hashed {pass_hash}')
+    return pass_hash
+def convert_time_to_ist(datetimeObj):
+    #auto detecting zones
+    from_zone = tz.gettz('IST')
+    to_zone = tz.gettz('Asia/Kolkata')
+    
+    IST = datetimeObj.replace(tzinfo = from_zone)
+    #converting time zone
+    central = IST.astimezone(to_zone)
+    print(central)
 #################################################################################################
 
 # token data in header 'HTTP_AUTHORIZATION': 'Bearer oEYOaVC955Onygsp3jjNmNQ8NTFUEDcv'
@@ -208,9 +225,12 @@ def handle_owner(request):
         header_info = request.META
         ip_of_host_from_header = header_info['REMOTE_ADDR']
         data = request.data
-        
-        print(f'{data} ============================================= {type(data)}')
-        serializer = OwnerSerializer(data = data)
+        clean_data_dict = clean_dict_to_serialize(dict(data))
+        clean_data_dict['password'] = hash_pass(clean_data_dict['password'])
+        print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ password has been hashed bro')
+        #print(f'{data} ============================================= {type(data)}')
+        print(f'{clean_data_dict} ============================================= {type(clean_data_dict)}')
+        serializer = OwnerSerializer(data = clean_data_dict)
         if serializer.is_valid():
             user_token = gen_token()
             user_token_expiry = expiry_time_calc(30)
@@ -257,6 +277,8 @@ def handle_store(request):
                     for error in serializer_error_dict.keys():
                         error_list_for_response.append(serializer_error_dict[error][0])
                     return Response({'error':error_list_for_response})
+            if token_status == False:
+                return Response({'token':'invalid'})
         else:
             return Response({'access':'denied'})
 
@@ -267,11 +289,96 @@ def handle_business_inventory(request):
         if 'HTTP_BEARER_TOKEN' in header_info.keys():
            
             token_from_res = header_info['HTTP_BEARER_TOKEN']
+            print(f'token found from header {token_from_res}')
             if token_from_res == "":
                 return Response({'token':"Null"})
             token_status , token_expiry , associated_business_id = check_token_validity(token_from_res , need_business_id=True)
             print(f'{token_status} =========== {token_expiry} ========== {associated_business_id}')
+            
+            #note the choices in the product_quantity_type must be GM , PIECE or LTR
+            
             if token_status == True:
                 data_dict = clean_dict_to_serialize(dict(request.data))
+                data_dict['updated_at'] = datetime.now()
+                data_dict['associated_business'] = associated_business_id
                 print(data_dict)
-                return Response({"Looks like valid bro"})    
+                serializer = BusinessInventorySerializer(data = data_dict)
+                if serializer.is_valid() == True:
+                    serializer.save()
+                    return Response(data_dict)
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
+        else:
+            return Response({'Token not found'})
+
+#-------------------------------------------------------------------------------------------------------------------------
+def store_and_business_inventory_logic(store_data_dict , associated_business_id_store_owner):
+    business = Business.objects.get(pk = associated_business_id_store_owner)
+    Business_inventory_update = BusinessInventoryMaster(updated_at = datetime.now() , product_name = store_data_dict['product_name'] , product_quantity_type = store_data_dict['product_quantity_type'] , product_quantity = store_data_dict['product_quantity'] , action='REMOVED' , price_per_unit = store_data_dict['price_per_unit'] , associated_business = business)
+    Business_inventory_update.save()
+    return True
+#-------------------------------------------------------------------------------------------------------------------------
+
+
+
+#in this function for now Im just taking the raw store id from api request I thinking of CREATING separate functionality for authenticating a store with a specific user thorugh some special token or jwt ( JSON Web Token )
+@api_view(['POST'])
+def handle_store_inventory(request):
+    if request.method == 'POST':
+        header_info = request.META
+        
+        if 'HTTP_BEARER_TOKEN' in header_info.keys():
+            token_from_header = header_info['HTTP_BEARER_TOKEN']
+            print(f'Token found from store-inventory api header {token_from_header} ')
+            if token_from_header == '':
+                return Response({'token':'null'})
+            
+            
+            token_status , token_expiry , associated_owner_id_token = check_token_validity(token_from_header , need_business_id=False)
+            
+            
+            if token_status == True:
+                
+                store_inventory_data_dict = clean_dict_to_serialize(dict(request.data))
+                store_inventory_data_dict['store_owner'] = associated_owner_id_token
+                store_inventory_data_dict['updated_at'] = datetime.now()
+                
+                store_owner_from_db_relation = list(storeMaster.objects.filter(pk = store_inventory_data_dict['associated_store']).values('associated_owner'))[0]['associated_owner']
+                print(f'Store Owner ID from Database StoreMaster and Owner Model relation is {store_owner_from_db_relation}')
+                
+                if associated_owner_id_token == str(store_owner_from_db_relation):
+                    store_inventory_data_dict['store_owner'] = store_owner_from_db_relation
+                    store_inventory_data_dict['updated_at'] = datetime.now()
+                    
+                    #getting the associated business id of the owner related the store from the api request data.
+                    store_owner = Owner.objects.get(pk=store_owner_from_db_relation)
+                    associated_business_id_store_owner = store_owner.business.pk
+                    print(f'{associated_business_id_store_owner} ++++++++++++++++++++++++++++++++++++++++++++++++++++++ ')
+                    business_and_store_product_management_status = store_and_business_inventory_logic(store_inventory_data_dict , associated_business_id_store_owner)
+                    
+                    serializer = StoreInventorySerializer(data = store_inventory_data_dict)
+                    if serializer.is_valid() == True:
+                        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                        print()
+                        print(f' {store_inventory_data_dict["product_quantity"]} {store_inventory_data_dict["product_name"]} has been removed from BUSINESS {associated_business_id_store_owner} owned by {store_owner_from_db_relation} and added to STORE {store_inventory_data_dict["associated_store"]}  ')
+                        
+                        
+                        return Response({'Owner Id':associated_owner_id_token , 'Business Id':associated_business_id_store_owner , 'store_data':store_inventory_data_dict})
+                    else:
+                        serializer_error_dict = dict(serializer.errors)
+                        error_list_for_response =[]
+                        for error in serializer_error_dict.keys():
+                            error_list_for_response.append(serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
+                else:
+                    return Response({'store_access':'Denied' , 'User Id From Token': associated_owner_id_token , 'User ID from Db relation':store_owner_from_db_relation})
+            
+            if token_status == False:
+                return Response({'token':'invalid'})
+            
+
+

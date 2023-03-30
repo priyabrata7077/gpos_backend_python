@@ -20,7 +20,7 @@ class Owner(models.Model):
 
 class Business(models.Model):
     
-    owned_by = models.ForeignKey(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
+    owned_by = models.OneToOneField(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
     business_name = models.CharField(max_length=50 , blank=False)
     business_email = models.EmailField(blank=True)
     business_phone = models.CharField(blank=True , max_length=12)
@@ -40,9 +40,10 @@ class storeMaster(models.Model):
     
     store_name = models.CharField(max_length=100 , blank=False)
     store_location = models.CharField(max_length=200 , blank=False)
+    associated_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , null=True , related_name = 'store')
     associated_business = models.ForeignKey(Business , related_name='business' , on_delete=models.DO_NOTHING)
     def __str__(self):
-        return f'{self.store_name} + {self.associated_business}'
+        return f' store ID - {self.pk} ->> {self.store_name} + {self.associated_business}'
 
 class auth(models.Model):
     user_name = models.CharField(max_length=100)
@@ -64,20 +65,21 @@ class BusinessInventoryMaster(models.Model):
     product_quantity = models.CharField(max_length=20)
     action = models.CharField(max_length=7 , choices=[('ADDED' ,'product added') , ('REMOVED' , 'product removed')] , null=True)
     price_per_unit = models.CharField(max_length=10 , null=True)
-    associated_business = models.OneToOneField(Business , on_delete=models.DO_NOTHING , null=True)
+    associated_business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , null=True)
 
     def __str__(self):
         return f'{self.product_name} + {self.action} + {self.associated_business}'
 
    
 class storeInventoryMaster(models.Model):
+    store_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , null=True)
     updated_at = models.DateTimeField()
     product_name = models.CharField(max_length=100)
     product_quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' ,'pieces') , ('LTR' ,'litre')] )
     product_quantity = models.CharField(max_length=20)
     action = models.CharField(max_length=7 , choices=[('ADDED' ,'product added') , ('REMOVED' , 'product removed')] , null=True)
     price_per_unit = models.CharField(max_length=10 , null=True)
-    associated_store = models.OneToOneField(storeMaster , on_delete=models.DO_NOTHING , null=True)
+    associated_store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , null=True)
     
     def __str__(self):
         return f'{self.product_name} - {self.associated_store}'
