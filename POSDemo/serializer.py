@@ -1,14 +1,13 @@
 from rest_framework import serializers
-from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
-from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster
+#from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
+from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails
 
 
 class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Owner
-        fields = ['name', 'email' , 'password' , 'contact_number' , 'whatsapp_number', 'address' , 'city', 'pin' , 'country' , 'pan_card_number' , 'date_of_entry']
-        
+        fields = '__all__'        
     
 class BusinessSerializer(serializers.ModelSerializer):
     
@@ -32,3 +31,10 @@ class StoreInventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = storeInventoryMaster
         fields = '__all__'
+        
+class OwnerDetailsSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = OwnerDetails
+        fields = '__all__'
+

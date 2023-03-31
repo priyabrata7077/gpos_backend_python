@@ -71,7 +71,7 @@ WSGI_APPLICATION = 'POScore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'GPOS2', 
+        'NAME': 'GPOS', 
         'USER': 'postgres', 
         'PASSWORD': 'riddhi',
         'HOST': '127.0.0.1', 

@@ -7,6 +7,13 @@ class Owner(models.Model):
     password = models.CharField(blank=False , max_length=100 , unique=True)
     contact_number = models.CharField(blank=False , max_length=10)
     whatsapp_number = models.CharField(max_length=10 , blank=True)
+    date_of_entry = models.DateField(blank=False)
+
+    def __str__(self):
+        return f'{self.name} - {self.pk}'
+
+class OwnerDetails(models.Model):
+    owner_id = models.ForeignKey(Owner , related_name='details' , on_delete=models.DO_NOTHING)
     address = models.CharField(max_length=300)
     city = models.CharField(max_length=20)
     pin = models.CharField(max_length=6)
@@ -15,9 +22,8 @@ class Owner(models.Model):
     date_of_entry = models.DateField(blank=False)
 
     def __str__(self):
-        return f'{self.name} - {self.pk}'
-
-
+        return f' owner ->  {self.owner_id} EnteredOn -> {self.date_of_entry}  '
+    
 class Business(models.Model):
     
     owned_by = models.OneToOneField(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
@@ -55,6 +61,36 @@ class auth(models.Model):
     def __str__(self):
         return f'{self.user_name} - {self.token} '
 
+
+class EmployeeMaster(models.Model):
+    
+    name = models.CharField(max_length=100 , blank=False)
+    phone = models.CharField(max_length=10 , blank=False)
+    email = models.EmailField(blank=False)
+    password = models.CharField(max_length=20 , blank=False)
+    address = models.CharField(max_length=200 , blank=False)
+    adhaar = models.CharField(max_length=12 , blank=False)
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employee')
+
+
+
+class EmployeeAuth(models.Model):
+    employee_name = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='authentication')
+    store = models.ForeignKey(storeMaster , related_name='employee_auth' , on_delete=models.DO_NOTHING)
+    token = models.CharField(max_length=300)
+    have_access = models.BooleanField()
+   
+
+#Products categories companies brands subcategories
+
+class productCompany(models.Model):
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+
+
+
      
 #Component models of sales Products , Inventory , Category , Brand
 
@@ -83,6 +119,7 @@ class storeInventoryMaster(models.Model):
     
     def __str__(self):
         return f'{self.product_name} - {self.associated_store}'
+
 
 
 
