@@ -17,7 +17,8 @@ urlpatterns = [
     path('add-store' , views.handle_store , name = 'add-store'),
     path('business-inventory' , views.handle_business_inventory , name = 'business-inventory-management' ),
     path('store-inventory' , views.handle_store_inventory , name = 'store-inventory-management'),
-    path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details')
+    path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details'),
+    path('handle-customer' , views.handle_customer_details , name='get-customer-details')
 ]
 
 

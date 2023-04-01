@@ -27,7 +27,7 @@ class OwnerDetails(models.Model):
     
 class Business(models.Model):
     
-    owned_by = models.OneToOneField(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
+    owned_by = models.ForeignKey(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
     business_name = models.CharField(max_length=50 , blank=False)
     business_email = models.EmailField(blank=True)
     business_phone = models.CharField(blank=True , max_length=12)
@@ -66,8 +66,8 @@ class auth(models.Model):
 class EmployeeMaster(models.Model):
     
     name = models.CharField(max_length=100 , blank=False)
-    aphone = models.CharField(max_length=10 , blank=False)
-    emil = models.EmailField(blank=False)
+    phone = models.CharField(max_length=10 , blank=False)
+    email = models.EmailField(blank=False)
     password = models.CharField(max_length=20 , blank=False)
     address = models.CharField(max_length=200 , blank=False)
     adhaar = models.CharField(max_length=12 , blank=False)
@@ -81,10 +81,12 @@ class EmployeeAuth(models.Model):
     token = models.CharField(max_length=300)
     have_access = models.BooleanField()
 
+# =============================================================================================================
 
 class Customer(models.Model):
     name = models.CharField(max_length=100 , blank=False)
     contact = models.CharField(max_length=10 , unique=True , blank=False) 
+    address = models.CharField(max_length=200 , blank=False , null=True)
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
     
     def __str__(self):
@@ -108,7 +110,7 @@ class Product(models.Model):
     def __str__(self):
         return f'{self.name}'
  
-
+# ==============================================================================================================
 '''
 class EmployeeSalary(models.Model):
     salary = 
@@ -145,5 +147,36 @@ class storeInventoryMaster(models.Model):
 
 
 
+
+#Sales page components  ,  Barcode , stock register , sales pending , Sales Register , Transaction Details
+
+class Barcode(models.Model):
+    barcode = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return f'{self.barcode} - ID -> {self.pk} '
+
+
+class TransactionDetails(models.Model):
+    bill_ID = models.CharField(max_length=50 , blank=True)
+    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='transaction')
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
+
+
+class SalesRegister(models.Model):
+    
+    bill_ID = models.CharField(max_length=50 , blank=True)
+    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='salesregister')
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='salesregister' )
+    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesregister')
+    item_total = models.CharField(max_length=100)
+    product_barcode = models.CharField(max_length=100)
+    item_name = models.CharField()
+
+
+    
+
+    
 
 

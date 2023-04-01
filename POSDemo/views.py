@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster
 from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
@@ -38,7 +38,13 @@ def expiry_time_calc(seconds_to_add):
 
 def check_token_expiry(token_expiry_from_db):
     #token_expiry_from_db = float(token_expiry_from_db)  
-    timestamp_now = expiry_time_calc(0)
+    timestamp_now_obj = datetime.today()
+    timestamp_now_seconds = timestamp_now_obj.timestamp()
+    timestamp_now = int(timestamp_now_seconds)
+    
+    
+    
+    
     print(f'{token_expiry_from_db} ------------ >>>>>>>>>>>>>>>>>>> -------------')
     print(f'{timestamp_now} ------- ================= ------------ ')
     
@@ -80,7 +86,7 @@ def check_token_validity(token_from_response , need_business_id=True , need_user
                 print('----------------------------------------------------')
                 print(f'{user_id_of_the_token} -- {associated_business_id}')
                 print('----------------------------------------------------')
-                return True , token_expiry , str(list(associated_business_id)[0]['pk'])
+                return True , token_expiry , str(associated_business_id)
         if need_business_id == False:
             return True , token_expiry , user_id_of_the_token
     else:
@@ -196,6 +202,7 @@ def handle_business(request):
             #converting the modified python dict back to json data
             clean_data_dict = clean_dict_to_serialize(data_dict)
             print(clean_data_dict)
+            clean_data_dict['data_entered_on'] = datetime.now().date()
             #data_dict['owned_by'] = Owner.objects.filter(name=data_dict['owned_by']).values('pk')
             
             #data_from_frontend = json.loads(data)
@@ -424,6 +431,23 @@ def handle_store_inventory(request):
             
             if token_status == False:
                 return Response({'token':'invalid'})
+
+
+
+
+#--------------------------------------------------------FOR SALES PAGE , ITS WITHOUT TOKEN AUTHENTICATION FOR NOW ---------------------------------            
+@api_view(['GET' , 'POST'])
+def handle_customer_details(request):
+    
+    if request.method == 'POST':
+        
+        data = request.data
+        data_dict =clean_dict_to_serialize(dict(data))
+        
+        if 'name' in data_dict.keys():
             
-
-
+            customer = list(Customer.objects.filter(name = data_dict['name']).values('contact' , 'address'))[0]
+            contact = customer['contact']
+            address = customer['address']
+            
+            return Response({'customer_contatc' : contact , 'customer_address':address})
