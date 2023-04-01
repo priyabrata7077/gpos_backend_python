@@ -5,7 +5,7 @@ from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -436,7 +436,7 @@ def handle_store_inventory(request):
 
 
 #--------------------------------------------------------FOR SALES PAGE , ITS WITHOUT TOKEN AUTHENTICATION FOR NOW ---------------------------------            
-@api_view(['GET' , 'POST'])
+@api_view(['POST'])
 def handle_customer_details(request):
     
     if request.method == 'POST':
@@ -444,10 +444,43 @@ def handle_customer_details(request):
         data = request.data
         data_dict =clean_dict_to_serialize(dict(data))
         
-        if 'name' in data_dict.keys():
+        if 'name' in data_dict.keys() or 'contact' in data_dict.keys():
             
-            customer = list(Customer.objects.filter(name = data_dict['name']).values('contact' , 'address'))[0]
-            contact = customer['contact']
-            address = customer['address']
             
-            return Response({'customer_contatc' : contact , 'customer_address':address})
+            if 'contact' != '':
+                customer = Customer.objects.filter(contact = data_dict['contact']).values('name' , 'address')
+                
+                name = customer[0]['name']
+                address = customer[0]['address']
+                
+                return Response({'name': name , 'address': address})
+
+            if 'name' != '':
+                
+                customer = Customer.objects.filter(name = data_dict['name']).values('contact' , 'address')
+                
+                contact = customer[0]['contact']
+                address = customer[0]['address']
+                
+                return Response({'customer_contatc' : contact , 'customer_address':address})
+
+@api_view(['POST'])
+def handle_products_data(request):
+    if request.method == 'POST':
+        
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        
+        if 'product_name' in data_dict.keys():
+            dict_for_response = {}
+            print(f' ========================================== {data_dict["product_name"]}')
+            products = Product.objects.filter(name__startswith = data_dict['product_name']).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
+            if len(products) != 0:
+                if len(products) == 1:
+                    return Response({list[products]})
+                else:
+                    for queryset in products:
+                        dict_for_response.update(list[queryset][0])
+                    return Response(dict_for_response)
+        else:
+            return Response({'No name to search for bro'})

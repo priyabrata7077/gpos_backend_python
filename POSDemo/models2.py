@@ -73,6 +73,8 @@ class EmployeeMaster(models.Model):
     adhaar = models.CharField(max_length=12 , blank=False)
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employee')
 
+    def __str__(self):
+        return f' {self.name} -> ID {self.pk} '
 
 
 class EmployeeAuth(models.Model):
