@@ -7,22 +7,23 @@ class Owner(models.Model):
     password = models.CharField(blank=False , max_length=100 , unique=True)
     contact_number = models.CharField(blank=False , max_length=10)
     whatsapp_number = models.CharField(max_length=10 , blank=True)
+
     date_of_entry = models.DateField(blank=False)
 
     def __str__(self):
         return f'{self.name} - {self.pk}'
 
 class OwnerDetails(models.Model):
-    owner_id = models.ForeignKey(Owner , related_name='details' , on_delete=models.DO_NOTHING)
+    owner_id = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , related_name='details')
     address = models.CharField(max_length=300)
     city = models.CharField(max_length=20)
     pin = models.CharField(max_length=6)
     country = models.CharField(max_length=20)
     pan_card_number = models.CharField(max_length=10 , blank=False , unique=True)
-    date_of_entry = models.DateField(blank=False)
-
+    date_of_entry = models.DateField()
+    
     def __str__(self):
-        return f' owner ->  {self.owner_id} EnteredOn -> {self.date_of_entry}  '
+        return f'Details of {self.owner_id}'
     
 class Business(models.Model):
     
@@ -65,8 +66,8 @@ class auth(models.Model):
 class EmployeeMaster(models.Model):
     
     name = models.CharField(max_length=100 , blank=False)
-    phone = models.CharField(max_length=10 , blank=False)
-    email = models.EmailField(blank=False)
+    aphone = models.CharField(max_length=10 , blank=False)
+    emil = models.EmailField(blank=False)
     password = models.CharField(max_length=20 , blank=False)
     address = models.CharField(max_length=200 , blank=False)
     adhaar = models.CharField(max_length=12 , blank=False)
@@ -79,17 +80,39 @@ class EmployeeAuth(models.Model):
     store = models.ForeignKey(storeMaster , related_name='employee_auth' , on_delete=models.DO_NOTHING)
     token = models.CharField(max_length=300)
     have_access = models.BooleanField()
-   
 
-#Products categories companies brands subcategories
 
-class productCompany(models.Model):
-    name = models.CharField(max_length=50)
+class Customer(models.Model):
+    name = models.CharField(max_length=100 , blank=False)
+    contact = models.CharField(max_length=10 , unique=True , blank=False) 
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
     
     def __str__(self):
-        return self.name
+        return f'cus name {self.name} cus ID {self.pk}' 
+
+class TaxMaster(models.Model):
+    name = models.CharField(max_length=20)
+    
+    def __str__(self):
+        return f' {self.name} - {self.pk}'
 
 
+class Product(models.Model):
+    name = models.CharField(max_length=100)
+    MRP = models.CharField(max_length=20)
+    purchase_rate = models.CharField(max_length=20)
+    sale_rate = models.CharField(max_length=20)
+    gst = models.ForeignKey(TaxMaster , related_name='product' , on_delete=models.DO_NOTHING)
+    store = models.ForeignKey(storeMaster , related_name='product' , on_delete=models.DO_NOTHING)
+    
+    def __str__(self):
+        return f'{self.name}'
+ 
+
+'''
+class EmployeeSalary(models.Model):
+    salary = 
+'''
 
      
 #Component models of sales Products , Inventory , Category , Brand
@@ -119,7 +142,6 @@ class storeInventoryMaster(models.Model):
     
     def __str__(self):
         return f'{self.product_name} - {self.associated_store}'
-
 
 
 
