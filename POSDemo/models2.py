@@ -150,6 +150,14 @@ class storeInventoryMaster(models.Model):
 
 #Sales page components  ,  Barcode , stock register , sales pending , Sales Register , Transaction Details
 
+
+class ModeOfPayment(models.Model):
+    name = models.CharField(max_length=20)
+    
+    def __str__(self):
+        return self.name
+
+
 class Barcode(models.Model):
     barcode = models.CharField(max_length=50)
     
@@ -162,6 +170,10 @@ class TransactionDetails(models.Model):
     business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='transaction')
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
+    payment = models.ForeignKey(ModeOfPayment , related_name='transaction' , on_delete=models.DO_NOTHING)
+
+
+
 
 
 class SalesRegister(models.Model):
@@ -172,7 +184,17 @@ class SalesRegister(models.Model):
     product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesregister')
     item_total = models.CharField(max_length=100)
     product_barcode = models.CharField(max_length=100)
-    item_name = models.CharField()
+    item_name = models.CharField(max_length=100)
+    item_mrp = models.CharField(max_length=50)
+    item_rate = models.CharField(max_length=50)
+    item_qty = models.CharField(max_length=10)
+    item_gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesregister')
+    item_row_total = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f'{self.bill_ID} - {self.item_row_total}'
+
+    
 
 
     
