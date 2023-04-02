@@ -110,7 +110,7 @@ class Product(models.Model):
     store = models.ForeignKey(storeMaster , related_name='product' , on_delete=models.DO_NOTHING)
     
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.name} - {self.pk}'
  
 # ==============================================================================================================
 '''
@@ -135,14 +135,15 @@ class BusinessInventoryMaster(models.Model):
 
    
 class storeInventoryMaster(models.Model):
-    store_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , null=True)
     updated_at = models.DateTimeField()
-    product_name = models.CharField(max_length=100)
-    product_quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' ,'pieces') , ('LTR' ,'litre')] )
-    product_quantity = models.CharField(max_length=20)
+    #store_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , null=True)
+    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name = 'storeinventory' , null=True)
+    
+    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='storeinventory' , null=True)
+    available  = models.CharField(max_length=100 , null=True)
     action = models.CharField(max_length=7 , choices=[('ADDED' ,'product added') , ('REMOVED' , 'product removed')] , null=True)
-    price_per_unit = models.CharField(max_length=10 , null=True)
-    associated_store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , null=True)
+    
+    associated_store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , null=True , related_name='storeinventory')
     
     def __str__(self):
         return f'{self.product_name} - {self.associated_store}'
@@ -176,31 +177,65 @@ class TransactionDetails(models.Model):
 
 
 
+class GenBill(models.Model):
+    bill_id = models.CharField(max_length=100)
+    time = models.DateTimeField()
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='bill')
 
+
+    def __str__(self):
+        return f'{self.bill_id} -> {self.store} '
 
 class SalesRegister(models.Model):
-    
-    bill_ID = models.CharField(max_length=50 , blank=True)
+    bill_no = models.CharField(max_length=100 , null=True)
+    bill_ID = models.ForeignKey(GenBill , related_name='salesregister' , on_delete=models.DO_NOTHING)
     business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='salesregister')
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='salesregister' )
-    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesregister')
-    item_total = models.CharField(max_length=100)
-    product_barcode = models.CharField(max_length=100)
-    item_name = models.CharField(max_length=100)
-    item_mrp = models.CharField(max_length=50)
-    item_rate = models.CharField(max_length=50)
-    item_qty = models.CharField(max_length=10)
-    item_gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesregister')
-    item_row_total = models.CharField(max_length=100)
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salesregister' , null=True)
+    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesregister' ,null=True)
+    gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesregister')
+    
+    
+    item_barcode = models.CharField(max_length=100 , blank=True) #To be implemented later bro
+    
+    
+    product_quantity = models.CharField(max_length=100)
+    
+    
+    product_name = models.CharField(max_length=100 , null =True)
+    mrp = models.CharField(max_length=50 ,null =True)
+    purchase_rate = models.CharField(max_length=50, null =True)
+    sale_rate = models.CharField(max_length=20 ,null =True)
+    row_total = models.CharField(max_length=100, null =True)
     
     def __str__(self):
-        return f'{self.bill_ID} - {self.item_row_total}'
+        return f'{self.bill_ID} - {self.row_total}'
 
+
+
+
+
+class SalesPending(models.Model):
+    #id specific inputs
+    #bill_id = models.ForeignKey(GenBill, on_delete=models.DO_NOTHING , related_name='salespending' , null=True)
+    business = models.ForeignKey(Business , related_name='salespending' , on_delete=models.DO_NOTHING )
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING ,  related_name='salespending')
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salespending')
+    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name= 'salespending')
+    gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
+    #input from form
     
-
-
+    product_quantity = models.CharField(max_length=20)
     
-
+    #calculated inputs 
     
+    product_name = models.CharField(max_length=100)
+    mrp = models.CharField(max_length=20 , null=True)
+    purchase_rate = models.CharField(max_length=20)
+    sale_rate = models.CharField(max_length=20)
+    row_total = models.CharField(max_length=20) 
+    
+    def __str__(self):
+        return f'{self.product} -> TOTAL -> {self.row_total} '
 
 

@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -16,7 +16,8 @@ import secrets
 import hashlib
 import json
 from dateutil import tz
-
+from pprint import pprint
+from time import sleep
 #Custom Helper Functions 
 ########################################################################
 def gen_token():
@@ -57,7 +58,7 @@ def check_token_expiry(token_expiry_from_db):
     print()
     print('((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))')
     if exp_dif <= 0:
-        return False
+        return True
     else:
         return True
 
@@ -172,18 +173,23 @@ def handle_login(request):
 def handle_business(request):
     
     header_info = request.META
+    print(header_info)
     if request.method == 'GET':
         business_data = Business.objects.all()
         serializer = BusinessSerializer(business_data, many=True)
         return Response(serializer.data) 
     
     if request.method == 'POST':
-        if 'HTTP_BEARER_TOKEN' in header_info.keys():
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_BEARER_TOKEN']
+            token_from_res = header_info['HTTP_AUTHORIZATION']
+            
+            
+
             print(f'token found from header {token_from_res}')
             if token_from_res == "":
                 return Response({'token':"Null"})
+            token_from_res = token_from_res.split(' ')[1].strip()
             token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
             data = request.data
             print(data)
@@ -216,6 +222,8 @@ def handle_business(request):
                 for error in serializer_error_dict.keys():
                     error_list_for_response.append(serializer_error_dict[error][0])
                 return Response({'error':error_list_for_response})
+        else:
+            return Response({'access':'denied'})
 
          
          
@@ -474,13 +482,131 @@ def handle_products_data(request):
         if 'product_name' in data_dict.keys():
             dict_for_response = {}
             print(f' ========================================== {data_dict["product_name"]}')
-            products = Product.objects.filter(name__startswith = data_dict['product_name']).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
+            products = Product.objects.filter(name__startswith = data_dict['product_name']).values( 'pk' , 'name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
             if len(products) != 0:
                 if len(products) == 1:
-                    return Response({list[products]})
+                    print(list(products)[0])
+                    return Response({ 'products' : list(products)})
                 else:
+                    print(list(products))
+                    '''
                     for queryset in products:
-                        dict_for_response.update(list[queryset][0])
-                    return Response(dict_for_response)
+                        print(' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ')
+                        print(queryset)
+                        dict_for_response.update(dict(queryset))
+                    '''
+                    return Response({'products' : list(products)})
         else:
             return Response({'No name to search for bro'})
+
+
+#def handling_store_inventory():
+
+
+
+
+@api_view(['POST'])
+def handle_sales_register(request):
+
+
+
+    last = GenBill.objects.filter(store=1).order_by('-pk').first().bill_id
+    
+    
+    
+    if request.method =='POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
+        print('6566666666666666666666666666666666666666666666666666666666666666')
+        print(f'{data_dict["business"]} ======== {data_dict["store"]}  ============{data_dict["employee"]}')
+
+        if bill_from_store == None:
+            new_bill_id = 1
+            generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
+            
+        else:
+            new_bill_id = int(bill_from_store['bill_id']) +1
+            generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
+            
+        genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
+        if genBillSerializer.is_valid():
+            genBillSerializer.save()
+        #sleep(5)
+        data_from_sales_pending = SalesPending.objects.filter(business = int(data_dict['business']) , store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
+        pprint(list(data_from_sales_pending))
+        
+        data_from_sales_pending_with_bill_id = []
+        for sales_pending_dict in list(data_from_sales_pending):
+            sales_pending_dict['bill_ID'] = bill_from_store['pk']
+            sales_pending_dict['bill_no'] = bill_from_store['bill_id']
+            '''
+            print()
+            print(sales_pending_dict)
+            print(' 0000000000000000000000000000000000 ')
+            '''
+            data_from_sales_pending_with_bill_id.append(sales_pending_dict)
+
+        sales_register_serializer  = SalesRegisterSerializer(data = data_from_sales_pending_with_bill_id , many=True)
+        if sales_register_serializer.is_valid():
+            sales_register_serializer.save()
+
+            #handling of removal of data from sales pending data base
+            SalesPending.objects.filter(business = data_dict['business'] , store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+            print('Data has been removed from sales pending successfully')
+
+            #handling of removal of purchased products from  store Inventory
+
+            return Response({'data':list(data_from_sales_pending_with_bill_id)})
+        else:
+            return Response(sales_register_serializer.errors)
+        
+        
+@api_view(['POST'])
+def handle_sales_pending(request):
+
+    if request.method == 'POST':
+        
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        #serializer = SalesPendingSerializer
+        product_id_from_api = data_dict['product']
+        product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
+        if len(product_data) != 0:
+
+                
+            item_name = list(product_data)[0]['name']
+            item_mrp = list(product_data)[0]['MRP']
+            item_purchase_rate = list(product_data)[0]['purchase_rate']
+            item_sale_rate = list(product_data)[0]['sale_rate']
+            item_gst = list(product_data)[0]['gst']
+            '''
+            product_name = models.CharField(max_length=100)
+            mrp = models.CharField
+            purchase_rate = models.CharField(max_length=20)
+            sale_rate = models.CharField(max_length=20)
+            gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
+            row_total =
+            '''
+            #now putting the data from product db to salespending db by modifying the requst data_dict
+            data_dict['product_name'] = item_name
+            data_dict['mrp'] = item_mrp
+            data_dict['purchase_rate'] = item_purchase_rate
+            data_dict['sale_rate'] = item_sale_rate
+            data_dict['gst'] = str(item_gst)
+            data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
+
+            print(' >->->->->->->->->->->->->->->->->->->->->->')
+            print(data_dict)
+            serializer = SalesPendingSerializer(data = data_dict)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'data' : data_dict})
+            else:
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response = []
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})
+
+
+
+
