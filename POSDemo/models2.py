@@ -107,6 +107,7 @@ class Product(models.Model):
     purchase_rate = models.CharField(max_length=20)
     sale_rate = models.CharField(max_length=20)
     gst = models.ForeignKey(TaxMaster , related_name='product' , on_delete=models.DO_NOTHING)
+    hsn = models.CharField(max_length=7 , null=True)
     store = models.ForeignKey(storeMaster , related_name='product' , on_delete=models.DO_NOTHING)
     
     def __str__(self):
