@@ -696,7 +696,13 @@ def add_store_under_business_id(request):
                        serializer_error_dict[error][0])
                 return Response({'error':error_list_for_response})
 
-
+def is_product_available_in_store(store_id , product_id):
+    data = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('pk' , 'product__name'))
+    if len(data) == 0:
+        return False , None
+    else:
+        return True , data[0]['product__name']
+    
 
 
 @api_view(['POST'])
@@ -707,3 +713,30 @@ def add_product_in_the_store_inventory(request):
         #putting the current date time
         data_dict['updated_at'] = datetime.now()
         data_dict['associated_store'] = data_dict['store']
+        
+        product_in_store , name = is_product_available_in_store(data_dict['store'] , data_dict['product'])
+        if product_in_store == True:
+            return Response({f'Product {name} Already in store'})
+        else:
+            business_id_from_product= list(Business.objects.filter(products__pk = data_dict['product']).values('pk'))
+            if len(business_id_from_product) == 0:
+                return Response({'No relation found'})
+            else:
+                data_dict['business'] = business_id_from_product[0]['pk']
+                serializer = StoreInventorySerializer(data = data_dict)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    data_dict['product_name'] = list(Product.objects.filter(pk = data_dict['product']).values('name'))[0]['name']
+                    return Response(data_dict)
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                    return Response({'error':error_list_for_response})                
+            
+            
+            
+        
+        
