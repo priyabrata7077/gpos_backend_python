@@ -9,7 +9,7 @@ from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , 
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
-from datetime import datetime, timezone
+from datetime import datetime, timezone , timedelta
 import json
 import string
 import secrets
@@ -30,18 +30,20 @@ def clean_dict_to_serialize(data_dict):
         data_dict[i] = data_dict[i][0]
     
     return data_dict
+
+#Has been used in handle_login and handle_owner functions
 def expiry_time_calc(seconds_to_add):
-    dt_obj = datetime.today()
-    time_now_in_seconds = dt_obj.timestamp()
-    expt_time = int(time_now_in_seconds)+seconds_to_add
+    time_now = datetime.now()
+    #time_now_in_seconds = dt_obj.timestamp()
+    future = time_now + timedelta(seconds=seconds_to_add)
     
-    return expt_time
+    return future
 
 def check_token_expiry(token_expiry_from_db):
     #token_expiry_from_db = float(token_expiry_from_db)  
-    timestamp_now_obj = datetime.today()
-    timestamp_now_seconds = timestamp_now_obj.timestamp()
-    timestamp_now = int(timestamp_now_seconds)
+    timestamp_now = datetime.now()
+    #timestamp_now_seconds = timestamp_now_obj.timestamp()
+    #timestamp_now = int(timestamp_now_seconds)
     
     
     
@@ -49,18 +51,18 @@ def check_token_expiry(token_expiry_from_db):
     print(f'{token_expiry_from_db} ------------ >>>>>>>>>>>>>>>>>>> -------------')
     print(f'{timestamp_now} ------- ================= ------------ ')
     
-    exp_time_rev = timestamp_now - token_expiry_from_db
-    exp_dif = token_expiry_from_db - timestamp_now  
+
     
     print()
     print('))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))')
-    print(exp_dif)
+    print('----------------------------------------------------------------')
     print()
     print('((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))')
-    if exp_dif <= 0:
+    if timestamp_now < token_expiry_from_db:
+        #time now is less than the future token expiry time so that would imply that the tokken hasnt expired yet
         return True
     else:
-        return True
+        return False
 
 def check_token_validity(token_from_response , need_business_id=True , need_user=False):
     token = auth.objects.filter(token = token_from_response).values('user_name' , 'token_expiry' , 'user_password' )
@@ -149,6 +151,7 @@ def handle_login(request):
 
                     if len(check_user_in_auth) == 0:
                         user_token = gen_token()
+
                         user_token_expiry = expiry_time_calc(86400)
                         user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header , user_password = hash_pass(passwd))
                         user_auth.save()
@@ -284,7 +287,8 @@ def handle_owner(request):
         serializer = OwnerSerializer(data = clean_data_dict)
         if serializer.is_valid():
             user_token = gen_token()
-            user_token_expiry = expiry_time_calc(30)
+
+            user_token_expiry = expiry_time_calc(86400)
             user_auth = auth(user_name=data['name'], user_email=data['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header , user_password = clean_data_dict['password'])
             user_auth.save()
             serializer.save()
