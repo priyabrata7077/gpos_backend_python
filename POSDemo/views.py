@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -375,7 +375,7 @@ def handle_business_inventory(request):
                     error_list_for_response =[]
                     for error in serializer_error_dict.keys():
                         error_list_for_response.append(serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
+                    return Response({'error':error_list_for_response})
         else:
             return Response({'Token not found'})
 
@@ -394,56 +394,44 @@ def store_and_business_inventory_logic(store_data_dict , associated_business_id_
 def handle_store_inventory(request):
     if request.method == 'POST':
         header_info = request.META
+        data_dict = clean_dict_to_serialize(dict(request.data))
         
-        if 'HTTP_BEARER_TOKEN' in header_info.keys():
-            token_from_header = header_info['HTTP_BEARER_TOKEN']
-            print(f'Token found from store-inventory api header {token_from_header} ')
-            if token_from_header == '':
-                return Response({'token':'null'})
-            
-            
-            token_status , token_expiry , associated_owner_id_token = check_token_validity(token_from_header , need_business_id=False)
-            
-            
-            if token_status == True:
-                
-                store_inventory_data_dict = clean_dict_to_serialize(dict(request.data))
-                store_inventory_data_dict['store_owner'] = associated_owner_id_token
-                store_inventory_data_dict['updated_at'] = datetime.now()
-                
-                store_owner_from_db_relation = list(storeMaster.objects.filter(pk = store_inventory_data_dict['associated_store']).values('associated_owner'))[0]['associated_owner']
-                print(f'Store Owner ID from Database StoreMaster and Owner Model relation is {store_owner_from_db_relation}')
-                
-                if associated_owner_id_token == str(store_owner_from_db_relation):
-                    store_inventory_data_dict['store_owner'] = store_owner_from_db_relation
-                    store_inventory_data_dict['updated_at'] = datetime.now()
-                    
-                    #getting the associated business id of the owner related the store from the api request data.
-                    store_owner = Owner.objects.get(pk=store_owner_from_db_relation)
-                    associated_business_id_store_owner = store_owner.business.pk
-                    print(f'{associated_business_id_store_owner} ++++++++++++++++++++++++++++++++++++++++++++++++++++++ ')
-                    business_and_store_product_management_status = store_and_business_inventory_logic(store_inventory_data_dict , associated_business_id_store_owner)
-                    
-                    serializer = StoreInventorySerializer(data = store_inventory_data_dict)
-                    if serializer.is_valid() == True:
-                        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                        print()
-                        print(f' {store_inventory_data_dict["product_quantity"]} {store_inventory_data_dict["product_name"]} has been removed from BUSINESS {associated_business_id_store_owner} owned by {store_owner_from_db_relation} and added to STORE {store_inventory_data_dict["associated_store"]}  ')
-                        
-                        
-                        return Response({'Owner Id':associated_owner_id_token , 'Business Id':associated_business_id_store_owner , 'store_data':store_inventory_data_dict})
-                    else:
-                        serializer_error_dict = dict(serializer.errors)
-                        error_list_for_response =[]
-                        for error in serializer_error_dict.keys():
-                            error_list_for_response.append(serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
-                else:
-                    return Response({'store_access':'Denied' , 'User Id From Token': associated_owner_id_token , 'User ID from Db relation':store_owner_from_db_relation})
-            
-            if token_status == False:
-                return Response({'token':'invalid'})
-
+        #putting the time stamp in the data_dict before serializing it
+        data_dict['updated_at'] = datetime.now()
+        
+        business_of_the_store = list(storeMaster.objects.filter(pk = data_dict['associated_store']).values('associated_business'))
+        if len(business_of_the_store) != 0:
+            data_dict['business'] = business_of_the_store[0]['associated_business']
+        else:
+            return Response({'No Associated Business With the given store ID was found'})
+        serializer = StoreInventorySerializer(data = data_dict)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data_dict)
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
+        
+        
+@api_view(['POST'])
+def get_all_stores_from_business_id(request):
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        #Bro I just found a reverse relation query trick 
+        all_stores = list(Business.objects.filter(pk = data_dict['business']).values('store__store_name' , 'store__associated_owner__name' , 'store__store_location'))
+        
+        if len(all_stores) == 0:
+            return Response({'No Store Was found under the given business ID '})
+        else:
+            return Response({'all stores': all_stores})
+        
+        
+        
+     
 
 
 
@@ -514,7 +502,7 @@ def handle_sales_register(request):
 
 
 
-    last = GenBill.objects.filter(store=1).order_by('-pk').first().bill_id
+    #last = GenBill.objects.filter(store=1).order_by('-pk').first().bill_id
     
     
     
@@ -522,13 +510,14 @@ def handle_sales_register(request):
         data_dict = clean_dict_to_serialize(dict(request.data))
         bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
         print('6566666666666666666666666666666666666666666666666666666666666666')
-        print(f'{data_dict["business"]} ======== {data_dict["store"]}  ============{data_dict["employee"]}')
+        print(f'{data_dict["store"]}  ============{data_dict["employee"]}')
 
         if bill_from_store == None:
             new_bill_id = 1
             generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
             
         else:
+        
             new_bill_id = int(bill_from_store['bill_id']) +1
             generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
             
@@ -536,13 +525,15 @@ def handle_sales_register(request):
         if genBillSerializer.is_valid():
             genBillSerializer.save()
         #sleep(5)
-        data_from_sales_pending = SalesPending.objects.filter(business = int(data_dict['business']) , store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
+        data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
         pprint(list(data_from_sales_pending))
         
         data_from_sales_pending_with_bill_id = []
         for sales_pending_dict in list(data_from_sales_pending):
-            sales_pending_dict['bill_ID'] = bill_from_store['pk']
-            sales_pending_dict['bill_no'] = bill_from_store['bill_id']
+            print(sales_pending_dict)
+            update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
+            sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
+            sales_pending_dict['bill_no'] = new_bill_id
             '''
             print()
             print(sales_pending_dict)
@@ -555,7 +546,7 @@ def handle_sales_register(request):
             sales_register_serializer.save()
 
             #handling of removal of data from sales pending data base
-            SalesPending.objects.filter(business = data_dict['business'] , store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+            SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
             print('Data has been removed from sales pending successfully')
 
             #handling of removal of purchased products from  store Inventory
@@ -575,7 +566,8 @@ def handle_sales_pending(request):
         product_id_from_api = data_dict['product']
         product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
         if len(product_data) != 0:
-
+            
+            associated_business_store = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
                 
             item_name = list(product_data)[0]['name']
             item_mrp = list(product_data)[0]['MRP']
@@ -597,7 +589,9 @@ def handle_sales_pending(request):
             data_dict['sale_rate'] = item_sale_rate
             data_dict['gst'] = str(item_gst)
             data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
-
+            
+            #fist getting the associated_business id from store with  .filter.values method and using the store id from request as pk and then setting it in the data dict before serializing the data.
+            data_dict['business'] = int(associated_business_store[0]['associated_business'])
             print(' >->->->->->->->->->->->->->->->->->->->->->')
             print(data_dict)
             serializer = SalesPendingSerializer(data = data_dict)
@@ -610,7 +604,106 @@ def handle_sales_pending(request):
                 for error in serializer_error_dict.keys():
                     error_list_for_response.append(serializer_error_dict[error][0])
                 return Response({'error':error_list_for_response})
+        else:
+            return Response({'no product in inventory'})
+
+def update_removed_product_from_store_inventory(product_id , product_count , store_id):
+    
+    product_quantity_from_db = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('available' , 'pk'))
+    print(product_quantity_from_db)
+    
+    if len(product_quantity_from_db) != 0:
+        product_quantity_from_db_updated = int(product_quantity_from_db[0]['available']) - int(product_count)
+        store_inventory = storeInventoryMaster.objects.get(pk = int(product_quantity_from_db[0]['pk']))
+        store_inventory.available = product_quantity_from_db_updated
+        store_inventory.save()
+        
+        return True
+    else:
+        return False
+
+''' 
+@api_view(['POST'])
+def handle_store_inventory(request):
+    
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        try:
+            business_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
+            if len(business_from_store_id) != 0:
+                business = business_from_store_id[0]['associated_business']
+            else:
+                business = 'None'
+            update_product_in_store_inventory = update_removed_product_from_store_inventory(data_dict['product'] , data_dict['product-count'] , data_dict['store'])
+            
+            if update_product_in_store_inventory == True:
+                return Response({'done'})
+            else:
+                return Response({'some error occured'})
+        except Exception as error:
+            return Response({error})
+
+
+#########################################################################################
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
+
+'''     
+ 
+@api_view(['POST'])
+def handle_product_master(request):
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        print(data_dict)
+        serializer = ProductMasterserBusinessializer(data = data_dict)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data_dict)
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
+ 
+    
+@api_view(['POST'])
+def add_store_under_business_id(request):
+    if request.method == 'POST':
+        
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
+        #heres two way to do the same thing u getting bro?
+        owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
+        if len(owner_of_business_id_from_api) == 0:
+            return Response({'No business was found'})
+        else:
+            data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
+            data_dict['associated_business'] = data_dict['business']
+            serializer = StoreSerializer(data = data_dict)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(data_dict)
+            else:
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response = []
+                for error in serializer_error_dict.keys():
+                   error_list_for_response.append(
+                       serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})
 
 
 
 
+@api_view(['POST'])
+def add_product_in_the_store_inventory(request):
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        #putting the current date time
+        data_dict['updated_at'] = datetime.now()
+        data_dict['associated_store'] = data_dict['store']

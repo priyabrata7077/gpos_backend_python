@@ -18,7 +18,7 @@ class StoreSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = storeMaster
-        fields = ['store_name' , 'store_location' , 'associated_business']
+        fields = '__all__'
 
 class BusinessInventorySerializer(serializers.ModelSerializer):
     
@@ -41,6 +41,14 @@ class ProductDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst']
+
+
+class ProductMasterserBusinessializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Product
+        fields = '__all__'
+
 
 class SalesPendingSerializer(serializers.ModelSerializer):
 
