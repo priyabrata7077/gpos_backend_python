@@ -484,12 +484,23 @@ def update_removed_product_from_store_inventory(product_id , product_count , sto
     else:
         return False
 
+'''
+def test_decorator(*args, **kwargs):
 
+    print('Running decorator')
+    def wrapper(func):
+        print(args[0])
+        #print(f'result from api is {result_from_api}')
+        result = func(*args[0])
+        return result
+    return wrapper
+'''
 
 @api_view(['POST'])
+
 def handle_sales_register(request):
     header_info = request.META
-    print(header_info)
+    #print(header_info)
     if 'HTTP_AUTHORIZATION' in header_info:
         if header_info['HTTP_AUTHORIZATION'] != '':
             if request.method =='POST':
