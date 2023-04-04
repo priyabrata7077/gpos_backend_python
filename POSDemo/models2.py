@@ -63,14 +63,23 @@ class auth(models.Model):
         return f'{self.user_name} - {self.token} '
 
 
+class JwtAuth(models.Model):
+    jwt = models.CharField(max_length=300)
+    expiry = models.DateTimeField()
+
+    def __str__(self):
+        return f'{self.jwt} jwt ID -> {self.pk}'
+
+
+
 class EmployeeMaster(models.Model):
     
     name = models.CharField(max_length=100 , blank=False)
-    phone = models.CharField(max_length=10 , blank=False)
-    email = models.EmailField(blank=False)
-    password = models.CharField(max_length=20 , blank=False)
+    phone = models.CharField(max_length=10 , blank=False , unique=True)
+    email = models.EmailField(blank=True)
+    password = models.CharField(max_length=100 , blank=False)
     address = models.CharField(max_length=200 , blank=False)
-    adhaar = models.CharField(max_length=12 , blank=False)
+    adhaar = models.CharField(max_length=12 , blank=False , unique=True)
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employee')
 
     def __str__(self):
@@ -202,7 +211,7 @@ class SalesRegister(models.Model):
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salesregister' , null=True)
     product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesregister' ,null=True)
     gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesregister')
-    
+    customer = models.ForeignKey(Customer , related_name='salesregister', on_delete=models.DO_NOTHING , blank=True , null=True)
     
     item_barcode = models.CharField(max_length=100 , blank=True) #To be implemented later bro
     

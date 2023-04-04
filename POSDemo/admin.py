@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models2 import Owner , Business , storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails , SalesRegister , ModeOfPayment , Barcode , TransactionDetails , SalesPending , GenBill
+from .models2 import Owner , Business , storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails , SalesRegister , ModeOfPayment , Barcode , TransactionDetails , SalesPending , GenBill , JwtAuth
 
 '''
 admin.site.register(ProductInventoryManagement)
@@ -21,6 +21,7 @@ admin.site.register(BusinessInventoryMaster)
 admin.site.register(storeMaster)
 admin.site.register(storeInventoryMaster)
 admin.site.register(auth)
+admin.site.register(JwtAuth)
 admin.site.register(EmployeeMaster)
 admin.site.register(EmployeeAuth)
 admin.site.register(Customer)

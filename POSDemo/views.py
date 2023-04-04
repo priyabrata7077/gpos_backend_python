@@ -4,8 +4,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth
+
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer
+
+
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -18,6 +21,9 @@ import json
 from dateutil import tz
 from pprint import pprint
 from time import sleep
+import jwt
+import os
+
 #Custom Helper Functions 
 ########################################################################
 def gen_token():
@@ -30,6 +36,20 @@ def clean_dict_to_serialize(data_dict):
         data_dict[i] = data_dict[i][0]
     
     return data_dict
+
+
+def create_jwt(owner_id , hashed_pass):
+    
+    payload = {
+        'owner':owner_id,
+        'pass':hashed_pass,
+    }
+
+    jwt_key = os.environ.get('GPOS_JWT_PASS')
+    
+    encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
+    print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
+    return encoded_jwt
 
 #Has been used in handle_login and handle_owner functions
 def expiry_time_calc(seconds_to_add):
@@ -94,7 +114,11 @@ def check_token_validity(token_from_response , need_business_id=True , need_user
             return True , token_expiry , user_id_of_the_token
     else:
         return False , None , None
-        
+
+
+#this function decodes the json web token from api and checks if it has expired or not from jwtAuth tableand then checks if the user with given id and password hash exists in db if exists in 
+
+  
 def hash_pass(passwd):
     hash_object = hashlib.sha256(passwd.encode())
     pass_hash = hash_object.hexdigest()
@@ -131,36 +155,24 @@ def handle_login(request):
                 email = login_data_dict['email'][0]
                 passwd = login_data_dict['password'][0]
                 print(f'{email} ------- {passwd}')
-                data_from_db = Owner.objects.filter(email=email , password = hash_pass(passwd))
+                data_from_db = list(Owner.objects.filter(email=email , password = hash_pass(passwd)).values('pk' , 'name'))
                 
                 if len(data_from_db) == 0:
                     return Response({'no user'})
                 else:
-                    data_from_db_values = list(
-                        data_from_db.values('name', 'email', 'password'))
-                    if email != data_from_db_values[0]['email'] and passwd != data_from_db_values[0]['password']:
-                        return Response({'invalid email and password'})
-                    if email != data_from_db_values[0]['email']:
-                        return Response({'Invalid Email'})
-                    if hash_pass(passwd) != data_from_db_values[0]['password']:
-                        return Response({'invalid password'})
-
+                    new_jwt = create_jwt(data_from_db[0]['pk'] , login_data_dict['password'])
+                    jwt_expiry = expiry_time_calc(86400)
+                    
+                    
+                    
+                    #before saving the newly created json web token after login I got
+                    save_jwt = JwtAuth(jwt = new_jwt , expiry = jwt_expiry)
+                    save_jwt.save()
+                    
+                    return Response({'user':data_from_db[0]['pk'] ,'bearer':new_jwt})                    
                     # checking the the user has already been logged in with the token
                     # checking if the user is already in the auth db.
-                    check_user_in_auth = list(auth.objects.filter(user_email = email).values('token'))
 
-                    if len(check_user_in_auth) == 0:
-                        user_token = gen_token()
-
-                        user_token_expiry = expiry_time_calc(86400)
-                        user_auth = auth(user_name=data_from_db_values[0]['name'], user_email=data_from_db_values[0]['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header , user_password = hash_pass(passwd))
-                        user_auth.save()
-                        return Response({'auth': 'success', 'token': user_token})
-                    else:
-                        
-                        print(check_user_in_auth[0]['token'])
-                        
-                        return Response({'user': 'validated' , 'token':check_user_in_auth[0]['token']})
 '''            
             if 'token' in login_data_dict.keys():
                 checK_token = auth.objects.filter(token = login_data_dict['token'][0]).values('user_name')
@@ -170,7 +182,21 @@ def handle_login(request):
                     user_of_token = list(checK_token)[0]['user_name']
                     return Response({'token' : 'valid' , 'user': user_of_token })
 '''                
-
+@api_view(['POST'])
+def handle_logout(request):
+    header_info = request.META
+    if request.method == 'POST':
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] != '':
+                jwt_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+                
+                #checking if its in jwtauth table
+                jwt_exists = list(JwtAuth.objects.filter(jwt = jwt_from_header))
+                if len(jwt_exists) == 0:
+                    return Response({'jwt':'invalid'})
+                else:
+                    pass
+        
        
 @api_view(['GET' , 'POST'])        
 def handle_business(request):
@@ -279,26 +305,40 @@ def handle_owner(request):
         ip_of_host_from_header = header_info['REMOTE_ADDR']
         data = request.data
         clean_data_dict = clean_dict_to_serialize(dict(data))
+        
+        #hashing the password
         clean_data_dict['password'] = hash_pass(clean_data_dict['password'])
+        
+        #converting the password into a jwt (JSON Web Token) format for authentication
+        
+        
         clean_data_dict['date_of_entry'] = datetime.now().date()
         print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ password has been hashed bro')
         #print(f'{data} ============================================= {type(data)}')
         print(f'{clean_data_dict} ============================================= {type(clean_data_dict)}')
         serializer = OwnerSerializer(data = clean_data_dict)
         if serializer.is_valid():
-            user_token = gen_token()
+            owner_instance = serializer.save()
+            
+            #user_token = gen_token()
+            
+            #creating a jwt (Json Web Token) with the owner id and his/her hashed password as payload
+            user_jwt = create_jwt(owner_instance.pk , clean_data_dict['password'])
 
             user_token_expiry = expiry_time_calc(86400)
-            user_auth = auth(user_name=data['name'], user_email=data['email'], token=user_token , token_expiry = user_token_expiry , user_ip = ip_of_host_from_header , user_password = clean_data_dict['password'])
+            user_auth = JwtAuth(jwt=user_jwt , expiry = user_token_expiry)
             user_auth.save()
-            serializer.save()
-            return Response({'user added':True , 'generated token':user_token})
+            
+            
+            return Response({'user added':True , 'generated jwt token':user_jwt})
         else:
             serializer_error_dict = dict(serializer.errors)
             error_list_for_response =[]
             for error in serializer_error_dict.keys():
                 error_list_for_response.append(serializer_error_dict[error][0])
             return Response({'error':error_list_for_response})
+    
+    
     if request.method == 'GET':
         if 'HTTP_BEARER_TOKEN' in header_info.keys():
             token_from_header = header_info['HTTP_BEARER_TOKEN']
@@ -394,17 +434,23 @@ def store_and_business_inventory_logic(store_data_dict , associated_business_id_
         
 @api_view(['POST'])
 def get_all_stores_from_business_id(request):
+    header_info = request.META
     if request.method == 'POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        #Bro I just found a reverse relation query trick 
-        all_stores = list(Business.objects.filter(pk = data_dict['business']).values('store__store_name' , 'store__associated_owner__name' , 'store__store_location'))
-        
-        if len(all_stores) == 0:
-            return Response({'No Store Was found under the given business ID '})
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] != 0:
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                
+                #Bro I just found a reverse relation query trick 
+                all_stores = list(Business.objects.filter(pk = data_dict['business']).values('store__store_name' , 'store__associated_owner__name' , 'store__store_location'))
+                
+                if len(all_stores) == 0:
+                    return Response({'No Store Was found under the given business ID '})
+                else:
+                    return Response({'all stores': all_stores})
+            else:
+                return Response({'access':'denied'})
         else:
-            return Response({'all stores': all_stores})
-        
+            return Response({'access':'denied'})
         
         
      
@@ -412,10 +458,10 @@ def get_all_stores_from_business_id(request):
 
 
 #--------------------------------------------------------FOR SALES PAGE , ITS WITHOUT TOKEN AUTHENTICATION FOR NOW ---------------------------------            
-@api_view(['POST'])
+@api_view(['POST' , 'GET'])
 def handle_customer_details(request):
     
-    if request.method == 'POST':
+    if request.method == 'GET':
         
         data = request.data
         data_dict =clean_dict_to_serialize(dict(data))
@@ -424,21 +470,36 @@ def handle_customer_details(request):
             
             
             if 'contact' != '':
-                customer = Customer.objects.filter(contact = data_dict['contact']).values('name' , 'address')
+                customer = list(Customer.objects.filter( store__pk = data_dict['store'] ,  contact = data_dict['contact']).values('name' , 'address'))
                 
-                name = customer[0]['name']
-                address = customer[0]['address']
-                
-                return Response({'name': name , 'address': address})
+                if len(customer) != 0:
+                    name = customer[0]['name']
+                    address = customer[0]['address']
+                    return Response({'name': name , 'address': address})
+                else:
+                    return Response({'customer':'None'})
+            else:
+                return Response({'invalid':'input'})
+        else:
+            return Response({'invalid':'input'})
 
-            if 'name' != '':
-                
-                customer = Customer.objects.filter(name = data_dict['name']).values('contact' , 'address')
-                
-                contact = customer[0]['contact']
-                address = customer[0]['address']
-                
-                return Response({'customer_contatc' : contact , 'customer_address':address})
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        if data_dict['address'] == '':
+            data_dict['address'] = list(storeMaster.objects.filter(pk=1).values('associated_business__address'))[0]['associated_business__address']
+        serializer = CustomerSerializer(data = data_dict)
+        if serializer.is_valid():
+            customer_instance = serializer.save()
+            return Response({f'{customer_instance.pk}':'added'})
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})         
+            
+
+
 
 @api_view(['POST'])
 def handle_products_data(request):
@@ -501,7 +562,7 @@ def test_decorator(*args, **kwargs):
 def handle_sales_register(request):
     header_info = request.META
     #print(header_info)
-    if 'HTTP_AUTHORIZATION' in header_info:
+    if 'HTTP_AUTHORIZATION' in header_info.keys():
         if header_info['HTTP_AUTHORIZATION'] != '':
             if request.method =='POST':
                 data_dict = clean_dict_to_serialize(dict(request.data))
@@ -560,55 +621,60 @@ def handle_sales_register(request):
  
 @api_view(['POST'])
 def handle_sales_pending(request):
-
+    header_info = request.META
     if request.method == 'POST':
         
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        #serializer = SalesPendingSerializer
-        product_id_from_api = data_dict['product']
-        product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
-        if len(product_data) != 0:
-            
-            associated_business_store = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
-                
-            item_name = list(product_data)[0]['name']
-            item_mrp = list(product_data)[0]['MRP']
-            item_purchase_rate = list(product_data)[0]['purchase_rate']
-            item_sale_rate = list(product_data)[0]['sale_rate']
-            item_gst = list(product_data)[0]['gst']
-            '''
-            product_name = models.CharField(max_length=100)
-            mrp = models.CharField
-            purchase_rate = models.CharField(max_length=20)
-            sale_rate = models.CharField(max_length=20)
-            gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
-            row_total =
-            '''
-            #now putting the data from product db to salespending db by modifying the requst data_dict
-            data_dict['product_name'] = item_name
-            data_dict['mrp'] = item_mrp
-            data_dict['purchase_rate'] = item_purchase_rate
-            data_dict['sale_rate'] = item_sale_rate
-            data_dict['gst'] = str(item_gst)
-            data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
-            
-            #fist getting the associated_business id from store with  .filter.values method and using the store id from request as pk and then setting it in the data dict before serializing the data.
-            data_dict['business'] = int(associated_business_store[0]['associated_business'])
-            print(' >->->->->->->->->->->->->->->->->->->->->->')
-            print(data_dict)
-            serializer = SalesPendingSerializer(data = data_dict)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'data' : data_dict})
+        if 'HTTP_AUTHORIZARION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] != '':
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                #serializer = SalesPendingSerializer
+                product_id_from_api = data_dict['product']
+                product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
+                if len(product_data) != 0:
+                    
+                    associated_business_store = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
+                        
+                    item_name = list(product_data)[0]['name']
+                    item_mrp = list(product_data)[0]['MRP']
+                    item_purchase_rate = list(product_data)[0]['purchase_rate']
+                    item_sale_rate = list(product_data)[0]['sale_rate']
+                    item_gst = list(product_data)[0]['gst']
+                    '''
+                    product_name = models.CharField(max_length=100)
+                    mrp = models.CharField
+                    purchase_rate = models.CharField(max_length=20)
+                    sale_rate = models.CharField(max_length=20)
+                    gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
+                    row_total =
+                    '''
+                    #now putting the data from product db to salespending db by modifying the requst data_dict
+                    data_dict['product_name'] = item_name
+                    data_dict['mrp'] = item_mrp
+                    data_dict['purchase_rate'] = item_purchase_rate
+                    data_dict['sale_rate'] = item_sale_rate
+                    data_dict['gst'] = str(item_gst)
+                    data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
+                    
+                    #fist getting the associated_business id from store with  .filter.values method and using the store id from request as pk and then setting it in the data dict before serializing the data.
+                    data_dict['business'] = int(associated_business_store[0]['associated_business'])
+                    print(' >->->->->->->->->->->->->->->->->->->->->->')
+                    print(data_dict)
+                    serializer = SalesPendingSerializer(data = data_dict)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response({'data' : data_dict})
+                    else:
+                        serializer_error_dict = dict(serializer.errors)
+                        error_list_for_response = []
+                        for error in serializer_error_dict.keys():
+                            error_list_for_response.append(serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
+                else:
+                    return Response({'no product in inventory'})
             else:
-                serializer_error_dict = dict(serializer.errors)
-                error_list_for_response = []
-                for error in serializer_error_dict.keys():
-                    error_list_for_response.append(serializer_error_dict[error][0])
-                return Response({'error':error_list_for_response})
+                return Response({'access':'denied'})
         else:
-            return Response({'no product in inventory'})
-
+            return Response({'access':'denied'})
 
 
 ''' 
@@ -622,46 +688,58 @@ def handle_sales_pending(request):
  
 @api_view(['POST'])
 def handle_product_master(request):
+    header_info = request.META
     if request.method == 'POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        print(data_dict)
-        serializer = ProductMasterserBusinessializer(data = data_dict)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data_dict)
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] != 0:
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                print(data_dict)
+                serializer = ProductMasterserBusinessializer(data = data_dict)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(data_dict)
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                    return Response({'error':error_list_for_response})
+            else:
+                return Response({'access':'denied'})
         else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})
- 
+            return Response({'access':'denied'})
     
 @api_view(['POST'])
 def add_store_under_business_id(request):
+    header_info = request.META
     if request.method == 'POST':
-        
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
-        #heres two way to do the same thing u getting bro?
-        owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
-        if len(owner_of_business_id_from_api) == 0:
-            return Response({'No business was found'})
-        else:
-            data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
-            data_dict['associated_business'] = data_dict['business']
-            serializer = StoreSerializer(data = data_dict)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(data_dict)
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] !=  '': 
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                
+                #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
+                #heres two way to do the same thing u getting bro?
+                owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
+                if len(owner_of_business_id_from_api) == 0:
+                    return Response({'No business was found'})
+                else:
+                    data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
+                    data_dict['associated_business'] = data_dict['business']
+                    serializer = StoreSerializer(data = data_dict)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(data_dict)
+                    else:
+                        serializer_error_dict = dict(serializer.errors)
+                        error_list_for_response = []
+                        for error in serializer_error_dict.keys():
+                            error_list_for_response.append(
+                            serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
             else:
-                serializer_error_dict = dict(serializer.errors)
-                error_list_for_response = []
-                for error in serializer_error_dict.keys():
-                   error_list_for_response.append(
-                       serializer_error_dict[error][0])
-                return Response({'error':error_list_for_response})
+                return Response({'access':'denied'})
+        else:
+            return Response({'access':'denied'})
 
 def is_product_available_in_store(store_id , product_id):
     data = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('pk' , 'product__name'))
@@ -674,36 +752,64 @@ def is_product_available_in_store(store_id , product_id):
 
 @api_view(['POST'])
 def add_product_in_the_store_inventory(request):
+    header_info = request.META
+    pprint(header_info)
     if request.method == 'POST':
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'] != '':
+                
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                
+                #putting the current date time
+                data_dict['updated_at'] = datetime.now()
+                data_dict['associated_store'] = data_dict['store']
+                
+                product_in_store , name = is_product_available_in_store(data_dict['store'] , data_dict['product'])
+                if product_in_store == True:
+                    return Response({f'Product {name} Already in store'})
+                else:
+                    business_id_from_product= list(Business.objects.filter(products__pk = data_dict['product']).values('pk'))
+                    if len(business_id_from_product) == 0:
+                        return Response({'No relation found'})
+                    else:
+                        data_dict['business'] = business_id_from_product[0]['pk']
+                        serializer = StoreInventorySerializer(data = data_dict)
+                        
+                        if serializer.is_valid():
+                            serializer.save()
+                            data_dict['product_name'] = list(Product.objects.filter(pk = data_dict['product']).values('name'))[0]['name']
+                            return Response(data_dict)
+                        else:
+                            serializer_error_dict = dict(serializer.errors)
+                            error_list_for_response =[]
+                            for error in serializer_error_dict.keys():
+                                error_list_for_response.append(serializer_error_dict[error][0])
+                            return Response({'error':error_list_for_response})
+            else:
+                return Response({'access':'denied'})
+        else:
+            return Response({'access':'denied'})                
+            
+            
+#Now I need to authenticate users with jwt and store it in the auth file bro
+#Okay I got it I need to hash the password of the during login and signup
+#and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
+      
+@api_view(['POST'])
+def add_store_employee(request):
+    
+    if request.method == 'POST':
+        
         data_dict = clean_dict_to_serialize(dict(request.data))
         
-        #putting the current date time
-        data_dict['updated_at'] = datetime.now()
-        data_dict['associated_store'] = data_dict['store']
-        
-        product_in_store , name = is_product_available_in_store(data_dict['store'] , data_dict['product'])
-        if product_in_store == True:
-            return Response({f'Product {name} Already in store'})
+        serializer =  EmployeeSerializer(data=data_dict)
+        if serializer.is_valid():
+            employee_instance = serializer.save()
+            return Response(employee_instance)
         else:
-            business_id_from_product= list(Business.objects.filter(products__pk = data_dict['product']).values('pk'))
-            if len(business_id_from_product) == 0:
-                return Response({'No relation found'})
-            else:
-                data_dict['business'] = business_id_from_product[0]['pk']
-                serializer = StoreInventorySerializer(data = data_dict)
-                
-                if serializer.is_valid():
-                    serializer.save()
-                    data_dict['product_name'] = list(Product.objects.filter(pk = data_dict['product']).values('name'))[0]['name']
-                    return Response(data_dict)
-                else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response =[]
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response})                
-            
-            
-            
-        
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})       
         
