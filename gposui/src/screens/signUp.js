@@ -11,7 +11,7 @@ const SignInUi = () => {
     const navigate = useNavigate()
     
     const HandleAuth = async () => {
-      const result = await axios.get(`http://127.0.0.1:8000/get-owner?userEmail=${email}&pass=${password}` , {} ).then((res) => {
+      const result = await axios.post(`http://127.0.0.1:8000/get-owner` , {} ).then((res) => {
             if (res['data'][0]){
                         if (res['data'][0] === 'auth failed'){
                             console.log('Wrong Credentials Bro')

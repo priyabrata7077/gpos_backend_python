@@ -390,31 +390,7 @@ def store_and_business_inventory_logic(store_data_dict , associated_business_id_
 
 
 #in this function for now Im just taking the raw store id from api request I thinking of CREATING separate functionality for authenticating a store with a specific user thorugh some special token or jwt ( JSON Web Token )
-@api_view(['POST'])
-def handle_store_inventory(request):
-    if request.method == 'POST':
-        header_info = request.META
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        #putting the time stamp in the data_dict before serializing it
-        data_dict['updated_at'] = datetime.now()
-        
-        business_of_the_store = list(storeMaster.objects.filter(pk = data_dict['associated_store']).values('associated_business'))
-        if len(business_of_the_store) != 0:
-            data_dict['business'] = business_of_the_store[0]['associated_business']
-        else:
-            return Response({'No Associated Business With the given store ID was found'})
-        serializer = StoreInventorySerializer(data = data_dict)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data_dict)
-        else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})
-        
+
         
 @api_view(['POST'])
 def get_all_stores_from_business_id(request):
@@ -493,69 +469,84 @@ def handle_products_data(request):
 
 
 #def handling_store_inventory():
-
+def update_removed_product_from_store_inventory(product_id , product_count , store_id):
+    
+    product_quantity_from_db = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('available' , 'pk'))
+    print(product_quantity_from_db)
+    
+    if len(product_quantity_from_db) != 0:
+        product_quantity_from_db_updated = int(product_quantity_from_db[0]['available']) - int(product_count)
+        store_inventory = storeInventoryMaster.objects.get(pk = int(product_quantity_from_db[0]['pk']))
+        store_inventory.available = product_quantity_from_db_updated
+        store_inventory.save()
+        
+        return True
+    else:
+        return False
 
 
 
 @api_view(['POST'])
 def handle_sales_register(request):
+    header_info = request.META
+    print(header_info)
+    if 'HTTP_AUTHORIZATION' in header_info:
+        if header_info['HTTP_AUTHORIZATION'] != '':
+            if request.method =='POST':
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
+                print('6566666666666666666666666666666666666666666666666666666666666666')
+                print(f'{data_dict["store"]}  ============{data_dict["employee"]}')
 
+                if bill_from_store == None:
+                    new_bill_id = 1
+                    generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
+                    
+                else:
+                
+                    new_bill_id = int(bill_from_store['bill_id']) +1
+                    generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
+                    
+                genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
+                if genBillSerializer.is_valid():
+                    genBillSerializer.save()
+                #sleep(5)
+                data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
+                pprint(list(data_from_sales_pending))
+                
+                data_from_sales_pending_with_bill_id = []
+                for sales_pending_dict in list(data_from_sales_pending):
+                    print(sales_pending_dict)
+                    update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
+                    sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
+                    sales_pending_dict['bill_no'] = new_bill_id
+                    '''
+                    print()
+                    print(sales_pending_dict)
+                    print(' 0000000000000000000000000000000000 ')
+                    '''
+                    data_from_sales_pending_with_bill_id.append(sales_pending_dict)
 
+                sales_register_serializer  = SalesRegisterSerializer(data = data_from_sales_pending_with_bill_id , many=True)
+                if sales_register_serializer.is_valid():
+                    sales_register_serializer.save()
 
-    #last = GenBill.objects.filter(store=1).order_by('-pk').first().bill_id
-    
-    
-    
-    if request.method =='POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
-        print('6566666666666666666666666666666666666666666666666666666666666666')
-        print(f'{data_dict["store"]}  ============{data_dict["employee"]}')
+                    #handling of removal of data from sales pending data base
+                    SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    print('Data has been removed from sales pending successfully')
 
-        if bill_from_store == None:
-            new_bill_id = 1
-            generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
-            
+                    #handling of removal of purchased products from  store Inventory
+
+                    return Response({'data':list(data_from_sales_pending_with_bill_id)})
+                else:
+        
+                    return Response(sales_register_serializer.errors)
         else:
-        
-            new_bill_id = int(bill_from_store['bill_id']) +1
-            generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
-            
-        genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
-        if genBillSerializer.is_valid():
-            genBillSerializer.save()
-        #sleep(5)
-        data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
-        pprint(list(data_from_sales_pending))
-        
-        data_from_sales_pending_with_bill_id = []
-        for sales_pending_dict in list(data_from_sales_pending):
-            print(sales_pending_dict)
-            update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
-            sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
-            sales_pending_dict['bill_no'] = new_bill_id
-            '''
-            print()
-            print(sales_pending_dict)
-            print(' 0000000000000000000000000000000000 ')
-            '''
-            data_from_sales_pending_with_bill_id.append(sales_pending_dict)
-
-        sales_register_serializer  = SalesRegisterSerializer(data = data_from_sales_pending_with_bill_id , many=True)
-        if sales_register_serializer.is_valid():
-            sales_register_serializer.save()
-
-            #handling of removal of data from sales pending data base
-            SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
-            print('Data has been removed from sales pending successfully')
-
-            #handling of removal of purchased products from  store Inventory
-
-            return Response({'data':list(data_from_sales_pending_with_bill_id)})
-        else:
-            return Response(sales_register_serializer.errors)
-        
-        
+            return Response({'access':'denied'})
+    else:
+        return Response({'access':'denied'})
+    
+ 
 @api_view(['POST'])
 def handle_sales_pending(request):
 
@@ -607,44 +598,9 @@ def handle_sales_pending(request):
         else:
             return Response({'no product in inventory'})
 
-def update_removed_product_from_store_inventory(product_id , product_count , store_id):
-    
-    product_quantity_from_db = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('available' , 'pk'))
-    print(product_quantity_from_db)
-    
-    if len(product_quantity_from_db) != 0:
-        product_quantity_from_db_updated = int(product_quantity_from_db[0]['available']) - int(product_count)
-        store_inventory = storeInventoryMaster.objects.get(pk = int(product_quantity_from_db[0]['pk']))
-        store_inventory.available = product_quantity_from_db_updated
-        store_inventory.save()
-        
-        return True
-    else:
-        return False
+
 
 ''' 
-@api_view(['POST'])
-def handle_store_inventory(request):
-    
-    if request.method == 'POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        try:
-            business_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
-            if len(business_from_store_id) != 0:
-                business = business_from_store_id[0]['associated_business']
-            else:
-                business = 'None'
-            update_product_in_store_inventory = update_removed_product_from_store_inventory(data_dict['product'] , data_dict['product-count'] , data_dict['store'])
-            
-            if update_product_in_store_inventory == True:
-                return Response({'done'})
-            else:
-                return Response({'some error occured'})
-        except Exception as error:
-            return Response({error})
-
-
-#########################################################################################
             serializer_error_dict = dict(serializer.errors)
             error_list_for_response =[]
             for error in serializer_error_dict.keys():

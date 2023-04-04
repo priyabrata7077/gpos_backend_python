@@ -1,4 +1,8 @@
-
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+    color: white;
+    opacity: 1; /* Firefox */
+  }
+  
 .main-container{
     margin-top: 20px;
     top: 0;
@@ -12,17 +16,21 @@
 }
 
 .AddOwnerButton {
-    margin-top:10px;
-    padding: 7px 20px;
-    border: none;
-    border-radius: 20px;
-    background-color: rgb(108, 108, 209);
-    color: white;
+	text-decoration: none;
+	border:none;
+	background-color: black;
+	color:white;
+	padding: 10px 50px;
+	border-radius: 20px;
 }
 
 .Owners-Input {
-    margin: 5px;
-    padding: 10px 15px;
+	border:none;
+	padding: 10px 15px;
+	margin: 10px;
+	border-radius: 10px;
+	background-color: gray;
+	color: white;
 }
 
 h2 {
@@ -31,10 +39,10 @@ h2 {
 }
 
 .AddBusinessButton {
-    margin-top:10px;
-    padding: 7px 20px;
-    border: none;
-    border-radius: 20px;
-    background-color: rgb(214, 72, 29);
-    color: white;
+	text-decoration: none;
+	border:none;
+	background-color: black;
+	color:white;
+	padding: 10px 50px;
+	border-radius: 20px;
 }
