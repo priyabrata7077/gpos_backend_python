@@ -38,6 +38,22 @@ def clean_dict_to_serialize(data_dict):
     return data_dict
 
 
+def check_jwt_validity(jwt_from_api):
+    
+    decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
+    pprint(decoded_jwt)
+    
+    owner_id = decoded_jwt['owner_id']
+    pass_hash = decoded_jwt['pass']
+    
+    check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name'))
+    if len(check_owner) == 0:
+        return False , None
+    else:
+        return True , check_owner[0]['name']
+
+
+
 def create_jwt(owner_id , hashed_pass):
     
     payload = {
@@ -45,7 +61,7 @@ def create_jwt(owner_id , hashed_pass):
         'pass':hashed_pass,
     }
 
-    jwt_key = os.environ.get('GPOS_JWT_PASS')
+    jwt_key =  'password123'   #os.environ.get('GPOS_JWT_PASS')
     
     encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
     print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
