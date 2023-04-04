@@ -182,6 +182,7 @@ def handle_login(request):
                     user_of_token = list(checK_token)[0]['user_name']
                     return Response({'token' : 'valid' , 'user': user_of_token })
 '''                
+
 @api_view(['POST'])
 def handle_logout(request):
     header_info = request.META
@@ -195,7 +196,14 @@ def handle_logout(request):
                 if len(jwt_exists) == 0:
                     return Response({'jwt':'invalid'})
                 else:
-                    pass
+                    jwt_exists[0].delete()
+                    print(f'JWT {jwt_from_header} removed successfully on user logout ')
+                    return Response({'logout':'success'})
+            else:
+                return Response({'access':'denied'})
+        else:
+            return Response({'access':'denied'})
+        
         
        
 @api_view(['GET' , 'POST'])        
@@ -217,7 +225,7 @@ def handle_business(request):
 
             print(f'token found from header {token_from_res}')
             if token_from_res == "":
-                return Response({'token':"Null"})
+                return Response({'access':'denied'})
             token_from_res = token_from_res.split(' ')[1].strip()
             token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
             data = request.data
