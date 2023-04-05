@@ -185,13 +185,19 @@ class Barcode(models.Model):
         return f'{self.barcode} - ID -> {self.pk} '
 
 
-class TransactionDetails(models.Model):
-    bill_ID = models.CharField(max_length=50 , blank=True)
-    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='transaction')
-    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
-    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='transaction')
-    payment = models.ForeignKey(ModeOfPayment , related_name='transaction' , on_delete=models.DO_NOTHING)
-
+class TransactionDetailsMaster(models.Model):
+    bill_id = models.CharField(max_length=100)
+    date_of_entry = models.DateTimeField()
+    business = models.ForeignKey(Business , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
+    store = models.ForeignKey(storeMaster , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='transactiondetails')
+    mop = models.JSONField()
+    products = models.JSONField()
+    
+    def __str__(self):
+        return f' EM -> {self.employee} | store -> {self.store}'
+    
+    
 
 
 class GenBill(models.Model):

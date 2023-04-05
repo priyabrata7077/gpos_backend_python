@@ -4,9 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer
+
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer
 
 
 from rest_framework.decorators import api_view
@@ -613,6 +614,8 @@ def handle_sales_register(request):
                 data_from_sales_pending_with_bill_id = []
                 for sales_pending_dict in list(data_from_sales_pending):
                     print(sales_pending_dict)
+                    
+                    #handling of removal of purchased products from  store Inventory
                     update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
                     sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
                     sales_pending_dict['bill_no'] = new_bill_id
@@ -628,12 +631,54 @@ def handle_sales_register(request):
                     sales_register_serializer.save()
 
                     #handling of removal of data from sales pending data base
-                    SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    
+                    
+                    
+                    #SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    
+                    
+                    
+                    
                     print('Data has been removed from sales pending successfully')
+                    list_mop_amt_data = data_dict['mop_amt'][1:-1].split(',')
+                    #handle putting data in paymentdetailsmaster table here
+                    #list_data = list(data_dict['mop_amt'])
+                    
+                    mop_dict = {}
+                    try:
+                        transaction_details_dict = {}
+                        
+                        business_id_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business__pk'))
 
-                    #handling of removal of purchased products from  store Inventory
+                        mop_names_and_amout_dict = [ {list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name'))[0]['name'] : data2.split(':')[1] } for data2 in list_mop_amt_data]
+                        
+                        
+                        product_id_and_name = [ { sales_pending['product'] : sales_pending['product_name'] } for sales_pending in data_from_sales_pending ]
+                        
+                        transaction_details_dict['bill_id'] = new_bill_id
+                        transaction_details_dict['date_of_entry'] = datetime.now()
+                        transaction_details_dict['business'] = business_id_from_store_id[0]['associated_business__pk']
+                        transaction_details_dict['store'] = data_dict['store']
+                        transaction_details_dict['employee'] = data_dict['employee']
+                        transaction_details_dict['mop'] = mop_names_and_amout_dict
+                        transaction_details_dict['products'] = product_id_and_name
 
-                    return Response({'data':list(data_from_sales_pending_with_bill_id)})
+                        transaction_details_serializer = TransactionDetailsSerializer(data = transaction_details_dict)
+                        
+                        if transaction_details_serializer.is_valid():
+                            transaction_details_serializer.save()
+                        else:
+                            return Response(transaction_details_serializer.errors)
+            
+                        return Response(transaction_details_dict)
+                    
+                    except Exception as e:
+                        print(e)
+                        return Response({'Some Error Occured bro'})
+                    
+                    
+
+                    #return Response({'data':list(data_from_sales_pending_with_bill_id)})
                 else:
         
                     return Response(sales_register_serializer.errors)
@@ -820,7 +865,7 @@ def add_product_in_the_store_inventory(request):
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
 @api_view(['POST'])
-def add_store_employee(request):
+def add_business_employee(request):
     
     if request.method == 'POST':
         
