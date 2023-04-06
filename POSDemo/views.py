@@ -644,16 +644,17 @@ def handle_sales_register(request):
                     #handle putting data in paymentdetailsmaster table here
                     #list_data = list(data_dict['mop_amt'])
                     
-                    mop_dict = {}
+                    
                     try:
                         transaction_details_dict = {}
                         
                         business_id_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business__pk'))
 
-                        mop_names_and_amout_dict = [ {list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name'))[0]['name'] : data2.split(':')[1] } for data2 in list_mop_amt_data]
+                        
+                        mop_names_and_amout_dict = [ { 'mop_name' : list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['name'] ,'mop_id' :  list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['pk'] ,  'amount_paid' : data2.split(':')[1] } for data2 in list_mop_amt_data]
                         
                         
-                        product_id_and_name = [ { sales_pending['product'] : sales_pending['product_name'] } for sales_pending in data_from_sales_pending ]
+                        product_id_and_name = [ { 'product_id' : sales_pending['product'] , 'product_name': sales_pending['product_name']  , 'product_quantity':sales_pending['product_quantity'] } for sales_pending in data_from_sales_pending ]
                         
                         transaction_details_dict['bill_id'] = new_bill_id
                         transaction_details_dict['date_of_entry'] = datetime.now()
@@ -688,7 +689,7 @@ def handle_sales_register(request):
         return Response({'access':'denied'})
     
  
-@api_view(['POST'])
+@api_view(['POST' , 'PATCH'])
 def handle_sales_pending(request):
     header_info = request.META
     if request.method == 'POST':
@@ -744,6 +745,19 @@ def handle_sales_pending(request):
                 return Response({'access':'denied'})
         else:
             return Response({'access':'denied'})
+
+    if request.method == 'PATCH':
+        
+        try:
+            patch_data_dict = clean_dict_to_serialize(dict(request.data))
+            sales_pending_query_set = SalesPending.objects.filter(pk=patch_data_dict['sales_pending_id'])
+            sales_pending_query_set.update(product_quantity = patch_data_dict['product_quantity'])
+            #sales_pending_query_set.save()
+            return Response({'update':'success'})
+        except Exception as e:
+            print(e)
+            return Response({'error occured bro'})
+        
 
 
 ''' 
@@ -881,4 +895,37 @@ def add_business_employee(request):
             for error in serializer_error_dict.keys():
                 error_list_for_response.append(serializer_error_dict[error][0])
             return Response({'error':error_list_for_response})       
+
+
+@api_view(['POST'])
+def handle_product_return(request):
+    
+    
+    if request.method == 'POST':
         
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry'))
+        
+        if len(search_bill) == 0:
+            return Response({'no bill found'})
+        
+        else:
+            products_from_bill_id = search_bill[0]['products']
+            
+            
+            product_id_list = [i['product_id'] for i in products_from_bill_id ]
+            print(f' =================================== {product_id_list}')
+            
+            if int(data_dict['product_id']) in product_id_list:
+                found = True
+            else:
+                found = False
+            
+            if found == True:
+                return Response(search_bill[0])
+            else:
+                return Response({"product":'not_in_bill'})
+
+            
+          
