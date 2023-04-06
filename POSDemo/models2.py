@@ -89,7 +89,7 @@ class EmployeeMaster(models.Model):
 class EmployeeAuth(models.Model):
     employee_name = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='authentication')
     store = models.ForeignKey(storeMaster , related_name='employee_auth' , on_delete=models.DO_NOTHING)
-    token = models.CharField(max_length=300)
+    jwt = models.CharField(max_length=300)
     have_access = models.BooleanField()
 
 # =============================================================================================================
@@ -259,7 +259,6 @@ class SalesPending(models.Model):
     
     def __str__(self):
         return f' sales pending pk = {self.pk} | {self.product} -> TOTAL -> {self.row_total} '
-
 
 
 class SalesReturnRegister(models.Model):

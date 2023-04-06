@@ -42,16 +42,21 @@ def clean_dict_to_serialize(data_dict):
 def check_jwt_validity(jwt_from_api):
     
     decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
-    pprint(decoded_jwt)
+    #pprint(decoded_jwt)
     
-    owner_id = decoded_jwt['owner_id']
+    owner_id = decoded_jwt['owner']
     pass_hash = decoded_jwt['pass']
     
-    check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name'))
-    if len(check_owner) == 0:
+    check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
+    
+    if len(check_jwt_in_db) == 0:
         return False , None
     else:
-        return True , check_owner[0]['name']
+        check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
+        if len(check_owner) == 0:
+            return False , None
+        else:
+            return True , check_owner[0]['pk']
 
 
 
@@ -65,7 +70,7 @@ def create_jwt(owner_id , hashed_pass):
     jwt_key =  'password123'   #os.environ.get('GPOS_JWT_PASS')
     
     encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
-    print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
+    #print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
     return encoded_jwt
 
 #Has been used in handle_login and handle_owner functions
@@ -236,37 +241,39 @@ def handle_business(request):
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_AUTHORIZATION']
+            token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
-            
+            data_dict = clean_dict_to_serialize(dict(request.data))            
 
-            print(f'token found from header {token_from_res}')
+            #print(f'token found from header {token_from_res}')
             if token_from_res == "":
                 return Response({'access':'denied'})
-            token_from_res = token_from_res.split(' ')[1].strip()
-            token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
-            data = request.data
-            print(data)
-            data_dict = dict(data)
-            print(data_dict)
+
+            jwt_status , owner_pk = check_jwt_validity(token_from_res)
             
-            #here I'm fist getting the owner data from the Owner model with .filter method and getting its primary_key with .values method which gives a dictionary in then converting the whole thing into a list slicing it at the zeroth index wich gives us the data dictionary {'pk' : int_value}.
-            '''
-            owner_pk_from_db = list(Owner.objects.filter(name=data_dict['owned_by'][0]).values('pk'))[0]['pk']
-            print(owner_pk_from_db)
-            '''
+            if jwt_status == False:
+                return Response({'access':'denied'})
             
-            data_dict['owned_by'] = [f'{associated_user_id}']
-            print(data_dict)
             
-            #converting the modified python dict back to json data
-            clean_data_dict = clean_dict_to_serialize(data_dict)
-            print(clean_data_dict)
-            clean_data_dict['data_entered_on'] = datetime.now().date()
-            #data_dict['owned_by'] = Owner.objects.filter(name=data_dict['owned_by']).values('pk')
+            data_dict['date_of_entry'] = datetime.now().date()
+            print(f'primary key of the owner from token {owner_pk} ')
+            data_dict['owner_id'] = owner_pk
             
-            #data_from_frontend = json.loads(data)
-            serializer = BusinessSerializer(data = clean_data_dict)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            serializer = BusinessSerializer(data = data_dict)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -927,5 +934,24 @@ def handle_product_return(request):
             else:
                 return Response({"product":'not_in_bill'})
 
+
+def jwt_header_auth(header):
+    
+    if 'HTTP_AUTHORIZATION' not in header.keys():
+        return False , None
+
+    if header['HTTP_AUTHORIZATION'].split(' ')[0] != 'bearer':
+        return False , None
+    
+    if header['HTTP_AUTHORIZATION'].split(' ')[1] == '':
+        return False , None
+    
+    jwt_status , owner_id = check_jwt_validity(header['HTTP_AUTHORIZATION'].split(' ')[1].strip() )
+
+    if jwt_status == False:
+        return False  , None
+    
+    return True , owner_id
+        
             
           
