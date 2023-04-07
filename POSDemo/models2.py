@@ -322,6 +322,7 @@ class ReturnSalesPending(models.Model):
     bill_id = models.ForeignKey(GenBill , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
     business = models.ForeignKey(Business, on_delete=models.DO_NOTHING , related_name='returnsalespending')
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='returnsalespending')
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
     product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
     customer = models.ForeignKey(Customer , related_name='returnsalespending' , on_delete=models.DO_NOTHING)
     return_quantity = models.CharField(max_length=50 , null=True)

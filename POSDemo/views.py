@@ -2,9 +2,9 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-#from django.forms.models import model_to_dict
+from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister
 
 from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer
 
@@ -918,22 +918,32 @@ def handle_product_return(request):
         
         else:
             products_from_bill_id = search_bill[0]['products']
+            print(']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
+            print(products_from_bill_id)
             
-            
-            product_id_list = [i['product_id'] for i in products_from_bill_id ]
+            product_id_list = [ i['product_id'] for i in products_from_bill_id ]
             print(f' =================================== {product_id_list}')
             
-            if int(data_dict['product_id']) in product_id_list:
+            if int(data_dict['product']) in product_id_list:
                 found = True
             else:
                 found = False
             
-            if found == True:
-                return Response(search_bill[0])
-            else:
-                return Response({"product":'not_in_bill'})
+            if found == False:
+                return Response({"Product Not In Bill"})
+
             #look for customer in a store
+            data_from_sales_register = SalesRegister.objects.filter(bill_ID = data_dict['bill_id'])
+            #data_from_sales_register = model_to_dict(data_from_sales_register[1])
+            for i in range(len(data_from_sales_register)):
+                data = model_to_dict(data_from_sales_register[i])
+                print()
+                print(data)
+                print()
             
+            #print(data_from_sales_register)
+            
+            return Response({'Holla'})
             
             
 
