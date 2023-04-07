@@ -319,15 +319,15 @@ class DealerMaster(models.Model):
 
 class ReturnSalesPending(models.Model):
     date_of_entry = models.DateTimeField()
-    bill_id = models.ForeignKey(GenBill , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
+    bill_ID = models.ForeignKey(GenBill , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
     business = models.ForeignKey(Business, on_delete=models.DO_NOTHING , related_name='returnsalespending')
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='returnsalespending')
-    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
+    employee = models.ForeignKey(EmployeeMaster , null=True , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
     product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
-    customer = models.ForeignKey(Customer , related_name='returnsalespending' , on_delete=models.DO_NOTHING)
+    customer = models.ForeignKey(Customer , related_name='returnsalespending' , on_delete=models.DO_NOTHING , blank=True , null=True)
     return_quantity = models.CharField(max_length=50 , null=True)
     def __str__(self):
-        return f'{self.date_of_entry} | {self.bill_id} | {self.customer}'
+        return f'{self.date_of_entry} | {self.bill_ID} | {self.customer}'
 
 
 class PurchaseRegister(models.Model):

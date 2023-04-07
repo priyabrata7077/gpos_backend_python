@@ -88,7 +88,7 @@ class TransactionDetailsSerializer(serializers.ModelSerializer):
 class ReturnSalesPendingSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = SalesPending
+        model = ReturnSalesPending
         fields = '__all__'
 
 

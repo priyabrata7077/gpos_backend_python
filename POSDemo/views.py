@@ -4,9 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister 
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer
 
 
 from rest_framework.decorators import api_view
@@ -838,7 +838,6 @@ def is_product_available_in_store(store_id , product_id):
         return True , data[0]['product__name']
     
 
-
 @api_view(['POST'])
 def add_product_in_the_store_inventory(request):
     header_info = request.META
@@ -937,10 +936,24 @@ def handle_product_return(request):
             #data_from_sales_register = model_to_dict(data_from_sales_register[1])
             for i in range(len(data_from_sales_register)):
                 data = model_to_dict(data_from_sales_register[i])
-                print()
                 print(data)
-                print()
-            
+                
+                return_sales_pending_data_dict = {}
+                return_sales_pending_data_dict['date_of_entry'] = datetime.now()
+                
+                
+                data['date_of_entry'] = datetime.now()
+                if str(data['product']) == data_dict['product']:
+                    data['return_quantity'] = data_dict['return_quantity']
+                    pprint(data)
+                    save_in_sales_pending_table_serializer = ReturnSalesPendingSerializer(data = data)
+                    if save_in_sales_pending_table_serializer.is_valid():
+                        save_in_sales_pending_table_serializer.save()
+                        saving_in_return_sales_pending_success = True
+                    else:
+                        saving_in_return_sales_pending_success = False
+                        return Response(save_in_sales_pending_table_serializer.errors)   
+
             #print(data_from_sales_register)
             
             return Response({'Holla'})
