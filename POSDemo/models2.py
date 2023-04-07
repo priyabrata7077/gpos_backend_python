@@ -258,7 +258,7 @@ class SalesPending(models.Model):
     def __str__(self):
         return f' sales pending pk = {self.pk} | {self.product} -> TOTAL -> {self.row_total} '
 
-'''
+
 class SalesReturnRegister(models.Model):
     bill_no = models.CharField(max_length=100 , null=True)
     #bill_ID = models.ForeignKey(GenBill , related_name='salesreturn' , on_delete=models.DO_NOTHING)
@@ -266,7 +266,7 @@ class SalesReturnRegister(models.Model):
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='salesreturn' )
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salesreturn' , null=True)
     
-    
+    '''    
     product_structure = {
         'product_id':'2',
         'product_name':'ching',
@@ -275,7 +275,7 @@ class SalesReturnRegister(models.Model):
         'sale_rate':''
         'return_reason':'broken_or_some_shit_bro'
     }
-    
+    '''    
     
     product = models.JSONField(null=True)
     
@@ -296,7 +296,7 @@ class SalesReturnRegister(models.Model):
     
     def __str__(self):
         return f'{self.bill_no} - {self.customer.name}'    
-'''
+
 class ReturnTransactionDetails(models.Model):
     bill_id = models.CharField(max_length=100)
     date_of_entry = models.DateTimeField()
