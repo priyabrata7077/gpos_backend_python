@@ -4,9 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer
 
 
 from rest_framework.decorators import api_view
@@ -41,16 +41,21 @@ def clean_dict_to_serialize(data_dict):
 def check_jwt_validity(jwt_from_api):
     
     decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
-    pprint(decoded_jwt)
+    #pprint(decoded_jwt)
     
-    owner_id = decoded_jwt['owner_id']
+    owner_id = decoded_jwt['owner']
     pass_hash = decoded_jwt['pass']
     
-    check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name'))
-    if len(check_owner) == 0:
+    check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
+    
+    if len(check_jwt_in_db) == 0:
         return False , None
     else:
-        return True , check_owner[0]['name']
+        check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
+        if len(check_owner) == 0:
+            return False , None
+        else:
+            return True , check_owner[0]['pk']
 
 
 
@@ -64,7 +69,7 @@ def create_jwt(owner_id , hashed_pass):
     jwt_key =  'password123'   #os.environ.get('GPOS_JWT_PASS')
     
     encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
-    print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
+    #print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
     return encoded_jwt
 
 #Has been used in handle_login and handle_owner functions
@@ -235,37 +240,39 @@ def handle_business(request):
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_AUTHORIZATION']
+            token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
-            
+            data_dict = clean_dict_to_serialize(dict(request.data))            
 
-            print(f'token found from header {token_from_res}')
+            #print(f'token found from header {token_from_res}')
             if token_from_res == "":
                 return Response({'access':'denied'})
-            token_from_res = token_from_res.split(' ')[1].strip()
-            token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
-            data = request.data
-            print(data)
-            data_dict = dict(data)
-            print(data_dict)
+
+            jwt_status , owner_pk = check_jwt_validity(token_from_res)
             
-            #here I'm fist getting the owner data from the Owner model with .filter method and getting its primary_key with .values method which gives a dictionary in then converting the whole thing into a list slicing it at the zeroth index wich gives us the data dictionary {'pk' : int_value}.
-            '''
-            owner_pk_from_db = list(Owner.objects.filter(name=data_dict['owned_by'][0]).values('pk'))[0]['pk']
-            print(owner_pk_from_db)
-            '''
+            if jwt_status == False:
+                return Response({'access':'denied'})
             
-            data_dict['owned_by'] = [f'{associated_user_id}']
-            print(data_dict)
             
-            #converting the modified python dict back to json data
-            clean_data_dict = clean_dict_to_serialize(data_dict)
-            print(clean_data_dict)
-            clean_data_dict['data_entered_on'] = datetime.now().date()
-            #data_dict['owned_by'] = Owner.objects.filter(name=data_dict['owned_by']).values('pk')
+            data_dict['date_of_entry'] = datetime.now().date()
+            print(f'primary key of the owner from token {owner_pk} ')
+            data_dict['owner_id'] = owner_pk
             
-            #data_from_frontend = json.loads(data)
-            serializer = BusinessSerializer(data = clean_data_dict)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            serializer = BusinessSerializer(data = data_dict)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -613,6 +620,8 @@ def handle_sales_register(request):
                 data_from_sales_pending_with_bill_id = []
                 for sales_pending_dict in list(data_from_sales_pending):
                     print(sales_pending_dict)
+                    
+                    #handling of removal of purchased products from  store Inventory
                     update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
                     sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
                     sales_pending_dict['bill_no'] = new_bill_id
@@ -628,12 +637,55 @@ def handle_sales_register(request):
                     sales_register_serializer.save()
 
                     #handling of removal of data from sales pending data base
-                    SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    
+                    
+                    
+                    #SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    
+                    
+                    
+                    
                     print('Data has been removed from sales pending successfully')
+                    list_mop_amt_data = data_dict['mop_amt'][1:-1].split(',')
+                    #handle putting data in paymentdetailsmaster table here
+                    #list_data = list(data_dict['mop_amt'])
+                    
+                    
+                    try:
+                        transaction_details_dict = {}
+                        
+                        business_id_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business__pk'))
 
-                    #handling of removal of purchased products from  store Inventory
+                        
+                        mop_names_and_amout_dict = [ { 'mop_name' : list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['name'] ,'mop_id' :  list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['pk'] ,  'amount_paid' : data2.split(':')[1] } for data2 in list_mop_amt_data]
+                        
+                        
+                        product_id_and_name = [ { 'product_id' : sales_pending['product'] , 'product_name': sales_pending['product_name']  , 'product_quantity':sales_pending['product_quantity'] } for sales_pending in data_from_sales_pending ]
+                        
+                        transaction_details_dict['bill_id'] = new_bill_id
+                        transaction_details_dict['date_of_entry'] = datetime.now()
+                        transaction_details_dict['business'] = business_id_from_store_id[0]['associated_business__pk']
+                        transaction_details_dict['store'] = data_dict['store']
+                        transaction_details_dict['employee'] = data_dict['employee']
+                        transaction_details_dict['mop'] = mop_names_and_amout_dict
+                        transaction_details_dict['products'] = product_id_and_name
 
-                    return Response({'data':list(data_from_sales_pending_with_bill_id)})
+                        transaction_details_serializer = TransactionDetailsSerializer(data = transaction_details_dict)
+                        
+                        if transaction_details_serializer.is_valid():
+                            transaction_details_serializer.save()
+                        else:
+                            return Response(transaction_details_serializer.errors)
+            
+                        return Response(transaction_details_dict)
+                    
+                    except Exception as e:
+                        print(e)
+                        return Response({'Some Error Occured bro'})
+                    
+                    
+
+                    #return Response({'data':list(data_from_sales_pending_with_bill_id)})
                 else:
         
                     return Response(sales_register_serializer.errors)
@@ -643,7 +695,7 @@ def handle_sales_register(request):
         return Response({'access':'denied'})
     
  
-@api_view(['POST'])
+@api_view(['POST' , 'PATCH'])
 def handle_sales_pending(request):
     header_info = request.META
     if request.method == 'POST':
@@ -699,6 +751,19 @@ def handle_sales_pending(request):
                 return Response({'access':'denied'})
         else:
             return Response({'access':'denied'})
+
+    if request.method == 'PATCH':
+        
+        try:
+            patch_data_dict = clean_dict_to_serialize(dict(request.data))
+            sales_pending_query_set = SalesPending.objects.filter(pk=patch_data_dict['sales_pending_id'])
+            sales_pending_query_set.update(product_quantity = patch_data_dict['product_quantity'])
+            #sales_pending_query_set.save()
+            return Response({'update':'success'})
+        except Exception as e:
+            print(e)
+            return Response({'error occured bro'})
+        
 
 
 ''' 
@@ -820,7 +885,7 @@ def add_product_in_the_store_inventory(request):
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
 @api_view(['POST'])
-def add_store_employee(request):
+def add_business_employee(request):
     
     if request.method == 'POST':
         
@@ -836,4 +901,56 @@ def add_store_employee(request):
             for error in serializer_error_dict.keys():
                 error_list_for_response.append(serializer_error_dict[error][0])
             return Response({'error':error_list_for_response})       
+
+
+@api_view(['POST'])
+def handle_product_return(request):
+    
+    
+    if request.method == 'POST':
         
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry'))
+        
+        if len(search_bill) == 0:
+            return Response({'no bill found'})
+        
+        else:
+            products_from_bill_id = search_bill[0]['products']
+            
+            
+            product_id_list = [i['product_id'] for i in products_from_bill_id ]
+            print(f' =================================== {product_id_list}')
+            
+            if int(data_dict['product_id']) in product_id_list:
+                found = True
+            else:
+                found = False
+            
+            if found == True:
+                return Response(search_bill[0])
+            else:
+                return Response({"product":'not_in_bill'})
+
+
+def jwt_header_auth(header):
+    
+    if 'HTTP_AUTHORIZATION' not in header.keys():
+        return False , None
+
+    if header['HTTP_AUTHORIZATION'].split(' ')[0] != 'bearer':
+        return False , None
+    
+    if header['HTTP_AUTHORIZATION'].split(' ')[1] == '':
+        return False , None
+    
+    jwt_status , owner_id = check_jwt_validity(header['HTTP_AUTHORIZATION'].split(' ')[1].strip() )
+
+    if jwt_status == False:
+        return False  , None
+    
+    return True , owner_id
+        
+            
+          
