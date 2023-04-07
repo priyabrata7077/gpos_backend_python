@@ -6,7 +6,7 @@ from rest_framework.response import Response
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer
 
 
 from rest_framework.decorators import api_view
@@ -700,7 +700,7 @@ def handle_sales_pending(request):
     header_info = request.META
     if request.method == 'POST':
         
-        if 'HTTP_AUTHORIZARION' in header_info.keys():
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] != '':
                 data_dict = clean_dict_to_serialize(dict(request.data))
                 #serializer = SalesPendingSerializer
@@ -910,9 +910,9 @@ def handle_product_return(request):
     if request.method == 'POST':
         
         data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry'))
-        
+        pprint(data_dict)
+        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry' , 'mop'))
+        pprint(search_bill)
         if len(search_bill) == 0:
             return Response({'no bill found'})
         
@@ -932,6 +932,10 @@ def handle_product_return(request):
                 return Response(search_bill[0])
             else:
                 return Response({"product":'not_in_bill'})
+            #look for customer in a store
+            
+            
+            
 
 
 def jwt_header_auth(header):
@@ -952,5 +956,5 @@ def jwt_header_auth(header):
     
     return True , owner_id
         
-            
+     
           

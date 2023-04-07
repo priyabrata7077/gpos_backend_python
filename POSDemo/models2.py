@@ -12,7 +12,6 @@ class Owner(models.Model):
 
     def __str__(self):
         return f'{self.name} - {self.pk}'
-
 class OwnerDetails(models.Model):
     owner_id = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , related_name='details')
     address = models.CharField(max_length=300)
@@ -231,15 +230,14 @@ class SalesRegister(models.Model):
     row_total = models.CharField(max_length=100, null =True)
     
     def __str__(self):
-        return f'{self.bill_ID} - {self.row_total}'
-
+        return f' salesReg_pk -> {self.pk} | {self.bill_ID} - {self.row_total}'
 
 
 
 
 class SalesPending(models.Model):
     #id specific inputs
-    #bill_id = models.ForeignKey(GenBill, on_delete=models.DO_NOTHING , related_name='salespending' , null=True)
+    bill_id = models.ForeignKey(GenBill, on_delete=models.DO_NOTHING , related_name='salespending' , null=True)
     business = models.ForeignKey(Business , related_name='salespending' , on_delete=models.DO_NOTHING )
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING ,  related_name='salespending')
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salespending')
@@ -256,36 +254,49 @@ class SalesPending(models.Model):
     purchase_rate = models.CharField(max_length=20)
     sale_rate = models.CharField(max_length=20)
     row_total = models.CharField(max_length=20) 
-    
+    customer = models.ForeignKey(Customer , on_delete=models.DO_NOTHING , related_name='salespending' , blank=True , null=True)
     def __str__(self):
         return f' sales pending pk = {self.pk} | {self.product} -> TOTAL -> {self.row_total} '
 
-
+'''
 class SalesReturnRegister(models.Model):
     bill_no = models.CharField(max_length=100 , null=True)
-    bill_ID = models.ForeignKey(GenBill , related_name='salesreturn' , on_delete=models.DO_NOTHING)
+    #bill_ID = models.ForeignKey(GenBill , related_name='salesreturn' , on_delete=models.DO_NOTHING)
     business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='salesreturn')
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='salesreturn' )
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='salesreturn' , null=True)
-    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name='salesreturn' ,null=True)
-    gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesreturn')
+    
+    
+    product_structure = {
+        'product_id':'2',
+        'product_name':'ching',
+        'mrp':'100',
+        'purchase_rate':'90',
+        'sale_rate':''
+        'return_reason':'broken_or_some_shit_bro'
+    }
+    
+    
+    product = models.JSONField(null=True)
+    
+    #gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salesreturn')
     customer = models.ForeignKey(Customer , related_name='salesreturn', on_delete=models.DO_NOTHING , blank=True , null=True)
     
     item_barcode = models.CharField(max_length=100 , blank=True) #To be implemented later bro
     
     
-    product_quantity = models.CharField(max_length=100)
+    quantity_returned = models.CharField(max_length=100)
     
     
-    product_name = models.CharField(max_length=100 , null =True)
-    mrp = models.CharField(max_length=50 ,null =True)
-    purchase_rate = models.CharField(max_length=50, null =True)
-    sale_rate = models.CharField(max_length=20 ,null =True)
-    row_total = models.CharField(max_length=100, null =True)
+    
+    #mrp = models.CharField(max_length=50 ,null =True)
+    #purchase_rate = models.CharField(max_length=50, null =True)
+    #sale_rate = models.CharField(max_length=20 ,null =True)
+    #row_total = models.CharField(max_length=100, null =True)
     
     def __str__(self):
-        return f'{self.bill_ID} - {self.row_total}'    
-
+        return f'{self.bill_no} - {self.customer.name}'    
+'''
 class ReturnTransactionDetails(models.Model):
     bill_id = models.CharField(max_length=100)
     date_of_entry = models.DateTimeField()
@@ -294,7 +305,68 @@ class ReturnTransactionDetails(models.Model):
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='returntransaction')
     mop = models.JSONField()
     products = models.JSONField()
+    #reason = models.CharField(max_length=100 , blank=True , null=True)
     
     def __str__(self):
         return f' EM -> {self.employee} | store -> {self.store}'    
+
+class DealerMaster(models.Model):
+    date_of_entry = models.DateTimeField()
+    dealer_name = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f'{self.dealer_name}'
+
+class ReturnSalesPending(models.Model):
+    date_of_entry = models.DateTimeField()
+    bill_id = models.ForeignKey(GenBill , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
+    business = models.ForeignKey(Business, on_delete=models.DO_NOTHING , related_name='returnsalespending')
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='returnsalespending')
+    product = models.ForeignKey(Product , on_delete=models.DO_NOTHING , related_name = 'returnsalespending')
+    customer = models.ForeignKey(Customer , related_name='returnsalespending' , on_delete=models.DO_NOTHING)
+    return_quantity = models.CharField(max_length=50 , null=True)
+    def __str__(self):
+        return f'{self.date_of_entry} | {self.bill_id} | {self.customer}'
+
+
+class PurchaseRegister(models.Model):
+    
+    date_and_time = models.DateTimeField()
+    dealer = models.ForeignKey(DealerMaster , on_delete=models.DO_NOTHING , related_name = 'prchaseregister')
+    '''
+    product_structure = {
+        'product_id':'5'
+        "product_name":'ching',
+        'product_quantity':'133',
+        'product_:''
+    }
+    '''
+    
+    products = models.ForeignKey(Product , related_name = 'purchaseregister' , on_delete=models.DO_NOTHING)
+    quantity = models.CharField(max_length=20)
+    
+    def __str__(self):
+        return f" dealer_ID ->  {self.dealer.pk} name-> {self.dealer.dealer_name} | {self.products} + {self.quantity}"
+    
+class PurchaseTransactionDetails(models.Model):
+    date_of_entry = models.DateTimeField()
+    related_purchase = models.ForeignKey(PurchaseRegister , on_delete=models.DO_NOTHING , related_name = 'purtransactiondetails')
+    mop = models.JSONField()
+    
+    def __str__(self):
+        return f' {self.date_of_entry} -- {self.related_purchase} '
+
+
+    
+class EmployeeAttendance(models.Model):
+    date = models.DateField()
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='attendance')
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employeeAttendance')
+    
+    time_of_entry = models.TimeField()
+    
+    time_of_relief = models.TimeField()
+    
+    def __str__(self):
+        return f' {self.date} ->  {self.employee} -> {self.store} '
     
