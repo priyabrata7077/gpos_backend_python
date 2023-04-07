@@ -2,11 +2,11 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-#from django.forms.models import model_to_dict
+from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister 
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer
 
 
 from rest_framework.decorators import api_view
@@ -700,7 +700,7 @@ def handle_sales_pending(request):
     header_info = request.META
     if request.method == 'POST':
         
-        if 'HTTP_AUTHORIZARION' in header_info.keys():
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] != '':
                 data_dict = clean_dict_to_serialize(dict(request.data))
                 #serializer = SalesPendingSerializer
@@ -838,7 +838,6 @@ def is_product_available_in_store(store_id , product_id):
         return True , data[0]['product__name']
     
 
-
 @api_view(['POST'])
 def add_product_in_the_store_inventory(request):
     header_info = request.META
@@ -910,28 +909,56 @@ def handle_product_return(request):
     if request.method == 'POST':
         
         data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry'))
-        
+        pprint(data_dict)
+        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry' , 'mop'))
+        pprint(search_bill)
         if len(search_bill) == 0:
             return Response({'no bill found'})
         
         else:
             products_from_bill_id = search_bill[0]['products']
+            print(']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
+            print(products_from_bill_id)
             
-            
-            product_id_list = [i['product_id'] for i in products_from_bill_id ]
+            product_id_list = [ i['product_id'] for i in products_from_bill_id ]
             print(f' =================================== {product_id_list}')
             
-            if int(data_dict['product_id']) in product_id_list:
+            if int(data_dict['product']) in product_id_list:
                 found = True
             else:
                 found = False
             
-            if found == True:
-                return Response(search_bill[0])
-            else:
-                return Response({"product":'not_in_bill'})
+            if found == False:
+                return Response({"Product Not In Bill"})
+
+            #look for customer in a store
+            data_from_sales_register = SalesRegister.objects.filter(bill_ID = data_dict['bill_id'])
+            #data_from_sales_register = model_to_dict(data_from_sales_register[1])
+            for i in range(len(data_from_sales_register)):
+                data = model_to_dict(data_from_sales_register[i])
+                print(data)
+                
+                return_sales_pending_data_dict = {}
+                return_sales_pending_data_dict['date_of_entry'] = datetime.now()
+                
+                
+                data['date_of_entry'] = datetime.now()
+                if str(data['product']) == data_dict['product']:
+                    data['return_quantity'] = data_dict['return_quantity']
+                    pprint(data)
+                    save_in_sales_pending_table_serializer = ReturnSalesPendingSerializer(data = data)
+                    if save_in_sales_pending_table_serializer.is_valid():
+                        save_in_sales_pending_table_serializer.save()
+                        saving_in_return_sales_pending_success = True
+                    else:
+                        saving_in_return_sales_pending_success = False
+                        return Response(save_in_sales_pending_table_serializer.errors)   
+
+            #print(data_from_sales_register)
+            
+            return Response({'Holla'})
+            
+            
 
 
 def jwt_header_auth(header):
@@ -952,5 +979,5 @@ def jwt_header_auth(header):
     
     return True , owner_id
         
-            
+     
           
