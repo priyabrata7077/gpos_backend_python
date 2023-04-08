@@ -35,10 +35,11 @@ urlpatterns = [
     path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details'),
     path('handle-customer' , views.handle_customer_details , name='get-customer-details'),
     path('handle-products' , views.handle_products_data , name = 'handle-products-data'),
+    
+    
     path('sales-pending' , views.handle_sales_pending , name = 'handle-sales-pending'),
-    
-    
     path('generate-bill' , views.handle_sales_register , name = 'generate-bill-and-handle-sales-register'),
+    path( 'transaction-details' , views.handle_transaction_details , name = 'handle-transaction-details' ),
     path('business/store' , views.get_all_stores_from_business_id , name='all-stores-under-the-business-id'),
     path('business/store/add' , views.add_store_under_business_id , name='all-stores-under-the-business-id'),
     

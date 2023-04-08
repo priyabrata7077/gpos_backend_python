@@ -612,7 +612,8 @@ def handle_sales_register(request):
                     
                 genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
                 if genBillSerializer.is_valid():
-                    genBillSerializer.save()
+                    new_bill_pk = genBillSerializer.save()
+
                 #sleep(5)
                 data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
                 pprint(list(data_from_sales_pending))
@@ -623,7 +624,7 @@ def handle_sales_register(request):
                     
                     #handling of removal of purchased products from  store Inventory
                     update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
-                    sales_pending_dict['bill_ID'] = GenBill.objects.get(bill_id = new_bill_id).pk
+                    sales_pending_dict['bill_ID'] = new_bill_pk.pk
                     sales_pending_dict['bill_no'] = new_bill_id
                     '''
                     print()
@@ -640,48 +641,18 @@ def handle_sales_register(request):
                     
                     
                     
-                    #SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                    SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
                     
                     
                     
                     
                     print('Data has been removed from sales pending successfully')
-                    list_mop_amt_data = data_dict['mop_amt'][1:-1].split(',')
+                    
                     #handle putting data in paymentdetailsmaster table here
                     #list_data = list(data_dict['mop_amt'])
                     
                     
-                    try:
-                        transaction_details_dict = {}
-                        
-                        business_id_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business__pk'))
-
-                        
-                        mop_names_and_amout_dict = [ { 'mop_name' : list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['name'] ,'mop_id' :  list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['pk'] ,  'amount_paid' : data2.split(':')[1] } for data2 in list_mop_amt_data]
-                        
-                        
-                        product_id_and_name = [ { 'product_id' : sales_pending['product'] , 'product_name': sales_pending['product_name']  , 'product_quantity':sales_pending['product_quantity'] } for sales_pending in data_from_sales_pending ]
-                        
-                        transaction_details_dict['bill_id'] = new_bill_id
-                        transaction_details_dict['date_of_entry'] = datetime.now()
-                        transaction_details_dict['business'] = business_id_from_store_id[0]['associated_business__pk']
-                        transaction_details_dict['store'] = data_dict['store']
-                        transaction_details_dict['employee'] = data_dict['employee']
-                        transaction_details_dict['mop'] = mop_names_and_amout_dict
-                        transaction_details_dict['products'] = product_id_and_name
-
-                        transaction_details_serializer = TransactionDetailsSerializer(data = transaction_details_dict)
-                        
-                        if transaction_details_serializer.is_valid():
-                            transaction_details_serializer.save()
-                        else:
-                            return Response(transaction_details_serializer.errors)
-            
-                        return Response(transaction_details_dict)
-                    
-                    except Exception as e:
-                        print(e)
-                        return Response({'Some Error Occured bro'})
+                    return Response(data_from_sales_pending_with_bill_id)
                     
                     
 
@@ -693,7 +664,50 @@ def handle_sales_register(request):
             return Response({'access':'denied'})
     else:
         return Response({'access':'denied'})
-    
+
+
+@api_view(['POST'])
+def handle_transaction_details(request):
+
+    if request.method ==  'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        list_mop_amt_data = data_dict['mop_amt'][1:-1].split(',')
+        
+        transaction_details_dict = {}
+        
+        #business_id_from_store_id = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business__pk'))
+        data_from_sales_register = list(SalesRegister.objects.filter(bill_ID = data_dict['bill_ID']))
+        
+        print('???????????????????????????????????????????????????????????????????????')
+        pprint(data_from_sales_register)
+        
+        mop_names_and_amout_dict = [ { 'mop_name' : list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['name'] ,'mop_id' :  list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['pk'] ,  'amount_paid' : data2.split(':')[1] } for data2 in list_mop_amt_data]
+        
+        
+        product_id_and_name = [ { 'product_id' : model_to_dict(sales_register)['product'] , 'product_name': model_to_dict(sales_register)['product_name']  , 'product_quantity':model_to_dict(sales_register)['product_quantity'] } for sales_register in data_from_sales_register ]
+        
+        transaction_details_dict['bill_id'] = model_to_dict(data_from_sales_register[0])['bill_ID']
+        transaction_details_dict['date_of_entry'] = datetime.now()
+        transaction_details_dict['business'] = model_to_dict(data_from_sales_register[0])['business']
+        transaction_details_dict['store'] = model_to_dict(data_from_sales_register[0])['store']
+        transaction_details_dict['employee'] = model_to_dict(data_from_sales_register[0])['employee']
+        transaction_details_dict['mop'] = mop_names_and_amout_dict
+        transaction_details_dict['products'] = product_id_and_name
+
+        transaction_details_serializer = TransactionDetailsSerializer(data = transaction_details_dict)
+        
+        if transaction_details_serializer.is_valid():
+            transaction_details_serializer.save()
+            return Response(transaction_details_dict)
+        else:
+            return Response(transaction_details_serializer.errors)
+
+        #return Response(transaction_details_dict)
+        '''
+        except Exception as e:
+            print(e)
+            return Response({'Some Error Occured bro'})
+        '''
  
 @api_view(['POST' , 'PATCH'])
 def handle_sales_pending(request):

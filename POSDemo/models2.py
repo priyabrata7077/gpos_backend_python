@@ -173,7 +173,7 @@ class ModeOfPayment(models.Model):
     name = models.CharField(max_length=20)
     
     def __str__(self):
-        return self.name
+        return f'{self.name} -> {self.pk}'
 
 
 class Barcode(models.Model):
@@ -183,8 +183,17 @@ class Barcode(models.Model):
         return f'{self.barcode} - ID -> {self.pk} '
 
 
-class TransactionDetailsMaster(models.Model):
+class GenBill(models.Model):
     bill_id = models.CharField(max_length=100)
+    time = models.DateTimeField()
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='bill')
+
+
+    def __str__(self):
+        return f' Bill_pk -> {self.pk}| Bill_id {self.bill_id} -> {self.store} '
+
+class TransactionDetailsMaster(models.Model):
+    bill_id = models.ForeignKey(GenBill , on_delete=models.DO_NOTHING , related_name = 'transactiondetails')
     date_of_entry = models.DateTimeField()
     business = models.ForeignKey(Business , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
     store = models.ForeignKey(storeMaster , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
@@ -198,14 +207,7 @@ class TransactionDetailsMaster(models.Model):
     
 
 
-class GenBill(models.Model):
-    bill_id = models.CharField(max_length=100)
-    time = models.DateTimeField()
-    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='bill')
 
-
-    def __str__(self):
-        return f'{self.bill_id} -> {self.store} '
 
 class SalesRegister(models.Model):
     bill_no = models.CharField(max_length=100 , null=True)
