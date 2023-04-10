@@ -994,6 +994,10 @@ def jwt_header_auth(header):
     return True , owner_id
 
 
+
+
+
+
 @api_view(['POST' , 'PATCH'])
 def handle_employee_login(request):
     
