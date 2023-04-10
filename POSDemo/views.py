@@ -4,9 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister 
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer
 
 
 from rest_framework.decorators import api_view
@@ -992,6 +992,81 @@ def jwt_header_auth(header):
         return False  , None
     
     return True , owner_id
+
+
+@api_view(['POST' , 'PATCH'])
+def handle_employee_login(request):
+    
+    if request.method == 'POST':
+        
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        data_dict['password'] = hash_pass(data_dict['password'])
+        data_dict['modified_on'] = datetime.now()
+        
+        #Cheking If the employee id Exists in the EmployeeMaster Database
+        check_employee = list(EmployeeMaster.objects.filter(pk = data_dict['employee']).values('name' , 'credential'))
+        
+        if len(check_employee) == 0:
+            return Response({'access':'denied'})
+        
+        
+        #If the employee is already in EmployeeCredential table the data no more rows can be created with the same employee ID through POST method We'll Implement PATCH method for that bruv :)
+        if check_employee[0]['credential'] != None:
+            print('|||||||||||||||||||||')
+            
+            return Response({'employee':'exists'})
+        #Now Checking If the employee is already in  the EmployeeCredential Table
+        
+        
+        data_dict['Employee Name'] = check_employee[0]['name']
+        employee_credential_serializer = EmployeeCredentialSerializer(data = data_dict)
+        
+        if employee_credential_serializer.is_valid():
+            employee_jwt = create_jwt(data_dict['employee'] , data_dict['password'])
+            data_dict['employee Token'] = employee_jwt
+            employee_credential_serializer.save()
+            return Response(data_dict)
+        else:
+            serializer_error_dict = dict(employee_credential_serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
+        
+    if request.method == 'PATCH':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        employee_credential = EmployeeCredential.objects.filter(employee = data_dict['employee'] , username = data_dict['username'])
+        
+        
+        
+        if employee_credential.exists():
+            print(employee_credential.explain())
+            if 'password' in data_dict.keys():
+                data_dict['password'] = hash_pass(data_dict['password'])
+                data_dict['modified_on'] = datetime.now()
+                
+                serializer = EmployeeCredentialSerializer(instance=employee_credential[0] ,data=data_dict)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({'auth':'success'})
+                
+
+                
+            
+            return Response({'user':'exists'})
+        else:
+            return Response({'user':'unverified'})
+        
+        
+@api_view(['POST'])
+def handle_employee_auth(request):
+    
+    header_info = request.META
+    if request.method == 'POST':
+        pass
+        
         
      
           

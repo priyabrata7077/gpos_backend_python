@@ -76,13 +76,22 @@ class EmployeeMaster(models.Model):
     name = models.CharField(max_length=100 , blank=False)
     phone = models.CharField(max_length=10 , blank=False , unique=True)
     email = models.EmailField(blank=True)
-    password = models.CharField(max_length=100 , blank=False)
     address = models.CharField(max_length=200 , blank=False)
     adhaar = models.CharField(max_length=12 , blank=False , unique=True)
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employee')
 
     def __str__(self):
         return f' {self.name} -> ID {self.pk} '
+
+
+class EmployeeCredential(models.Model):
+    employee = models.ForeignKey(EmployeeMaster , related_name='credential' , on_delete=models.DO_NOTHING)
+    username = models.CharField(max_length=100  , blank=False , unique=True , null = True)
+    password = models.CharField(unique=True , max_length=100 , blank=False)
+    modified_on = models.DateTimeField()
+    
+    def __str__(self):
+        return f'{self.employee} - {self.password}> '
 
 
 class EmployeeAuth(models.Model):
@@ -372,4 +381,4 @@ class EmployeeAttendance(models.Model):
     
     def __str__(self):
         return f' {self.date} ->  {self.employee} -> {self.store} '
-    
+

@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-wb8n9ir#j2xktk57r8%s!xpnrgkhiujbqj-g^e=tyvn-0x=qst
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.17' , 'localhost' , '192.168.1.10']
+ALLOWED_HOSTS = ['192.168.1.18' , 'localhost' , '192.168.1.10']
 
 
 # Application definition
@@ -73,7 +73,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'GPOS', 
         'USER': 'postgres', 
-        'PASSWORD': 'rid#123#321',
+        'PASSWORD': 'riddhi',
         'HOST': '127.0.0.1', 
         'PORT': '5432',
     }
