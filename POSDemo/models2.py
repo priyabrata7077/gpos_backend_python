@@ -95,11 +95,13 @@ class EmployeeCredential(models.Model):
 
 
 class EmployeeAuth(models.Model):
-    employee_name = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='authentication')
+    employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='authentication')
     store = models.ForeignKey(storeMaster , related_name='employee_auth' , on_delete=models.DO_NOTHING)
     jwt = models.CharField(max_length=300)
     have_access = models.BooleanField()
 
+    def __str__(self):
+        return f'{self.employee} | Have Acces -> {self.have_access}'
 # =============================================================================================================
 
 class Customer(models.Model):

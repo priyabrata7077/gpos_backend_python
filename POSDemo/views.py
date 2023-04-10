@@ -4,9 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer
 
 
 from rest_framework.decorators import api_view
@@ -1004,7 +1004,7 @@ def handle_employee_login(request):
         data_dict['modified_on'] = datetime.now()
         
         #Cheking If the employee id Exists in the EmployeeMaster Database
-        check_employee = list(EmployeeMaster.objects.filter(pk = data_dict['employee']).values('name' , 'credential'))
+        check_employee = list(EmployeeMaster.objects.filter(pk = data_dict['employee']).values('name' , 'credential' , 'store'))
         
         if len(check_employee) == 0:
             return Response({'access':'denied'})
@@ -1023,9 +1023,32 @@ def handle_employee_login(request):
         
         if employee_credential_serializer.is_valid():
             employee_jwt = create_jwt(data_dict['employee'] , data_dict['password'])
-            data_dict['employee Token'] = employee_jwt
+            data_dict['jwt'] = employee_jwt
             employee_credential_serializer.save()
-            return Response(data_dict)
+            
+            #now adding the generated employee auth json web token in EmployeeAuth table
+            
+            #adding the store in the data dict for employeeAuth Table
+            data_dict['store'] = check_employee[0]['store']
+            data_dict['have_access'] = True 
+            employee_auth_serializer = EmployeeAuthSerializer(data = data_dict)
+            
+            if employee_auth_serializer.is_valid():
+                employee_auth_serializer.save()
+                return Response(data_dict)
+
+            else:
+
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response =[]
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})
+
+               
+            
+            
+            
         else:
             serializer_error_dict = dict(employee_credential_serializer.errors)
             error_list_for_response =[]
