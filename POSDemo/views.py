@@ -369,7 +369,7 @@ def handle_owner(request):
     if request.method == 'GET':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             token_from_header = header_info['HTTP_AUTHORIZATION']
-            if token_from_headerS.split(' ')[1] == " ":
+            if token_from_header.split(' ')[1] == " ":
                 return Response({'token':'NULL'})
         token_status , token_expiry , associated_business_id = check_token_validity(token_from_header)
         print(f'{token_status} -+ -+ -+ -+ -+ {token_expiry} -+ -+ -+ -+ -+ {associated_business_id}')

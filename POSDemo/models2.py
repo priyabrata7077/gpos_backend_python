@@ -141,7 +141,7 @@ class Product(models.Model):
  
 
 class VariableProduct(models.Model):
-    parent_product =  models.ForeignKey(Product , related_name='variable' , on_delete=models.DO_NOTHING)
+    parent_product =  models.ForeignKey(Product , related_name='variableproduct' , on_delete=models.DO_NOTHING)
     name = models.CharField(max_length=100)
     MRP = models.CharField(max_length=20)
     purchase_rate = models.CharField(max_length=20)
