@@ -59,7 +59,7 @@ def check_jwt_validity(jwt_from_api):
 
 
 
-def create_jwt(owner_id , employee_id , hashed_pass , owner=True , employee=False):
+def create_jwt(owner_id  , hashed_pass , employee_id=None ,  owner=True , employee=False):
     
     if owner==True and employee==False:
     
@@ -189,7 +189,7 @@ def handle_login(request):
                 if len(data_from_db) == 0:
                     return Response({'no user'})
                 else:
-                    new_jwt = create_jwt(data_from_db[0]['pk'] , login_data_dict['password'])
+                    new_jwt = create_jwt(owner_id = data_from_db[0]['pk'] , hashed_pass= login_data_dict['password'] , employee=False)
                     jwt_expiry = expiry_time_calc(86400)
                     
                     
@@ -288,11 +288,11 @@ def handle_business(request):
 def handle_owner_details(request):
     header_info = request.META
     if request.method == 'POST':
-        if 'HTTP_BEARER_TOKEN' in header_info.keys():
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_BEARER_TOKEN']
+            token_from_res = header_info['HTTP_AUTHORIZATION']
             print(f'token found from header {token_from_res}')
-            if token_from_res == "":
+            if token_from_res.split(' ')[1] == "":
                 return Response({'token':"Null"})
             token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
             print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||')
@@ -328,8 +328,10 @@ def handle_owner(request):
     if request.method =='POST':
         
         ip_of_host_from_header = header_info['REMOTE_ADDR']
-        data = request.data
-        clean_data_dict = clean_dict_to_serialize(dict(data))
+        
+        
+        clean_data_dict = clean_dict_to_serialize(dict(request.data))
+        pprint(clean_data_dict)
         
         #hashing the password
         clean_data_dict['password'] = hash_pass(clean_data_dict['password'])
@@ -348,7 +350,7 @@ def handle_owner(request):
             #user_token = gen_token()
             
             #creating a jwt (Json Web Token) with the owner id and his/her hashed password as payload
-            user_jwt = create_jwt(owner_instance.pk , clean_data_dict['password'])
+            user_jwt = create_jwt(owner_id = owner_instance.pk , hashed_pass = clean_data_dict['password'] , employee=False)
 
             user_token_expiry = expiry_time_calc(86400)
             user_auth = JwtAuth(jwt=user_jwt , expiry = user_token_expiry)
@@ -365,9 +367,9 @@ def handle_owner(request):
     
     
     if request.method == 'GET':
-        if 'HTTP_BEARER_TOKEN' in header_info.keys():
-            token_from_header = header_info['HTTP_BEARER_TOKEN']
-            if token_from_header == "":
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            token_from_header = header_info['HTTP_AUTHORIZATION']
+            if token_from_headerS.split(' ')[1] == " ":
                 return Response({'token':'NULL'})
         token_status , token_expiry , associated_business_id = check_token_validity(token_from_header)
         print(f'{token_status} -+ -+ -+ -+ -+ {token_expiry} -+ -+ -+ -+ -+ {associated_business_id}')
@@ -1007,12 +1009,13 @@ def handle_employee_login(request):
         if len(check_employee) == 0:
             return Response({'access':'denied'})
         
-        
+        if check_employee[0]['password'] != data_dict['password']:
+            return Response({'access':'denied'})
         #If the employee is already in EmployeeCredential table the data no more rows can be created with the same employee ID through POST method We'll Implement PATCH method for that bruv :)
         if check_employee[0]['credential'] != None:
             print('|||||||||||||||||||||')
             
-            return Response({'employee':'exists'})
+            return Response({'employee':check_employee[0]['name'] , 'store':check_employee[0]['store']})
         #Now Checking If the employee is already in  the EmployeeCredential Table
         
         

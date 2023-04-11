@@ -18,7 +18,12 @@ ALLOWED_HOSTS = ['192.168.1.18' , 'localhost' , '192.168.1.10']
 
 
 # Application definition
-
+INTERNAL_IPS = [
+   # ...
+   '127.0.0.1',
+   '192.168.1.18'
+   # ...
+]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,7 +34,8 @@ INSTALLED_APPS = [
     'POSDemo',
     'corsheaders',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    "debug_toolbar"
 ]
 
 
@@ -42,6 +48,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'POScore.urls'

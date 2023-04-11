@@ -135,10 +135,21 @@ class Product(models.Model):
     quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' ,'pieces') , ('LTR' ,'litre') , ('MTR' , 'meter') ] , null=True)
     #store = models.ForeignKey(storeMaster , related_name='product' , on_delete=models.DO_NOTHING , blank=True)
     business = models.ForeignKey(Business , related_name='products' , on_delete=models.DO_NOTHING , null=True )
-    
+    variable = models.BooleanField(null=True)
     def __str__(self):
         return f'{self.name} - {self.pk}'
  
+
+class VariableProduct(models.Model):
+    parent_product =  models.ForeignKey(Product , related_name='variable' , on_delete=models.DO_NOTHING)
+    name = models.CharField(max_length=100)
+    MRP = models.CharField(max_length=20)
+    purchase_rate = models.CharField(max_length=20)
+    sale_rate = models.CharField(max_length=20)
+    gst = models.ForeignKey(TaxMaster , related_name='variableproduct' , on_delete=models.DO_NOTHING)
+    hsn = models.CharField(max_length=7 , null=True , blank=True)
+    quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' , 'pieces') , ('LTR' , 'litre') , ('MTR' , 'meter')])
+    
 # ==============================================================================================================
 '''
 class EmployeeSalary(models.Model):
@@ -384,3 +395,9 @@ class EmployeeAttendance(models.Model):
     def __str__(self):
         return f' {self.date} ->  {self.employee} -> {self.store} '
 
+
+
+'''
+class CategoriesMaster(models.Model):
+    name = models.CharField()
+'''
