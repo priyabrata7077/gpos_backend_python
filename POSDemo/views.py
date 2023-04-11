@@ -43,19 +43,20 @@ def check_jwt_validity(jwt_from_api):
     decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
     #pprint(decoded_jwt)
     
-    owner_id = decoded_jwt['owner']
-    pass_hash = decoded_jwt['pass']
-    
-    check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
-    
-    if len(check_jwt_in_db) == 0:
-        return False , None
-    else:
-        check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
-        if len(check_owner) == 0:
+    if 'owner' in decoded_jwt.keys:
+        owner_id = decoded_jwt['owner']
+        pass_hash = decoded_jwt['pass']
+        
+        check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
+        
+        if len(check_jwt_in_db) == 0:
             return False , None
         else:
-            return True , check_owner[0]['pk']
+            check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
+            if len(check_owner) == 0:
+                return False , None
+            else:
+                return True , check_owner[0]['pk']
 
 
 
