@@ -59,18 +59,26 @@ def check_jwt_validity(jwt_from_api):
 
 
 
-def create_jwt(owner_id , hashed_pass):
+def create_jwt(owner_id , employee_id , hashed_pass , owner=True , employee=False):
     
-    payload = {
-        'owner':owner_id,
-        'pass':hashed_pass,
-    }
+    if owner==True and employee==False:
+    
+        payload = {
+            'owner':owner_id,
+            'pass':hashed_pass,
+        }
 
-    jwt_key =  'password123'   #os.environ.get('GPOS_JWT_PASS')
-    
-    encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
-    #print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
-    return encoded_jwt
+        jwt_key =  'password123'   #os.environ.get('GPOS_JWT_PASS')
+        
+        encoded_jwt = jwt.encode(payload=payload , key=jwt_key , algorithm='HS256')
+        #print(f'the following json web token {encoded_jwt} has been created for {owner_id}')
+        return encoded_jwt
+    if employee == True and owner == False:
+        payload = {
+            'employee': employee_id,
+            'pass': hashed_pass
+            
+        }
 
 #Has been used in handle_login and handle_owner functions
 def expiry_time_calc(seconds_to_add):
@@ -247,7 +255,7 @@ def handle_business(request):
             #print(f'token found from header {token_from_res}')
             if token_from_res == "":
                 return Response({'access':'denied'})
-
+            
             jwt_status , owner_pk = check_jwt_validity(token_from_res)
             
             if jwt_status == False:
@@ -257,20 +265,6 @@ def handle_business(request):
             data_dict['date_of_entry'] = datetime.now().date()
             print(f'primary key of the owner from token {owner_pk} ')
             data_dict['owner_id'] = owner_pk
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             
             serializer = BusinessSerializer(data = data_dict)
             if serializer.is_valid():
@@ -1026,7 +1020,7 @@ def handle_employee_login(request):
         employee_credential_serializer = EmployeeCredentialSerializer(data = data_dict)
         
         if employee_credential_serializer.is_valid():
-            employee_jwt = create_jwt(data_dict['employee'] , data_dict['password'])
+            employee_jwt = create_jwt(employee_id = data_dict['employee'] , hashed_pass= data_dict['password'] , employee=True , owner=False)
             data_dict['jwt'] = employee_jwt
             employee_credential_serializer.save()
             
