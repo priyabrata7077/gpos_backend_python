@@ -6,7 +6,7 @@ from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer
 
 
 from rest_framework.decorators import api_view
@@ -22,6 +22,7 @@ from dateutil import tz
 from pprint import pprint
 from time import sleep
 import jwt
+from jwt.exceptions import InvalidKeyError
 import os
 
 #Custom Helper Functions 
@@ -42,21 +43,35 @@ def check_jwt_validity(jwt_from_api):
     
     decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
     #pprint(decoded_jwt)
-    
-    if 'owner' in decoded_jwt.keys:
-        owner_id = decoded_jwt['owner']
-        pass_hash = decoded_jwt['pass']
-        
-        check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
-        
-        if len(check_jwt_in_db) == 0:
-            return False , None
-        else:
-            check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
-            if len(check_owner) == 0:
+    try:
+        if 'owner' in decoded_jwt.keys:
+            owner_id = decoded_jwt['owner']
+            pass_hash = decoded_jwt['pass']
+            
+            check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
+            
+            if len(check_jwt_in_db) == 0:
                 return False , None
             else:
-                return True , check_owner[0]['pk']
+                check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
+                if len(check_owner) == 0:
+                    return False , None
+                else:
+                    return True , check_owner[0]['pk']
+        if 'employee' in decoded_jwt.keys():
+            employee_id = decoded_jwt['employee']
+            pass_hash = decoded_jwt['pass']
+            
+            check_jwt_in_db = EmployeeAuth.objects.filter(jwt = jwt_from_api).values('employee' , 'employee__credential__password')
+            if not check_jwt_in_db.exists():
+                return False , None
+            else:
+                if pass_hash == list(check_jwt_in_db)[0]['employee__credential__password'] and employee_id == list(check_jwt_in_db[0]['employee']):
+                    return True , employee_id
+                else:
+                    return False , None
+    except InvalidKeyError:
+        return False , None
 
 
 
@@ -177,18 +192,20 @@ def handle_login(request):
         
 
             login_data = request.data
-            login_data_dict = dict(login_data)
+            login_data_dict =dict(login_data)
+            print(f'+++++++++++++++++++++ Login Data Bro +++++++++++++++++')
+            pprint(login_data_dict)
             if 'email' in login_data_dict.keys():
                 print(
                     f'{login_data_dict["email"]} -------- {type(login_data_dict)}')
                 #user_name = login_data_dict['username'][0]
-                email = login_data_dict['email'][0]
-                passwd = login_data_dict['password'][0]
+                email = login_data_dict["email"]
+                passwd = login_data_dict["password"]
                 print(f'{email} ------- {passwd}')
                 data_from_db = list(Owner.objects.filter(email=email , password = hash_pass(passwd)).values('pk' , 'name'))
-                
+                pprint(data_from_db)
                 if len(data_from_db) == 0:
-                    return Response({'no user'})
+                    return Response({'No user found'})
                 else:
                     new_jwt = create_jwt(owner_id = data_from_db[0]['pk'] , hashed_pass= login_data_dict['password'] , employee=False)
                     jwt_expiry = expiry_time_calc(86400)
@@ -251,7 +268,7 @@ def handle_business(request):
            
             token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
-            data_dict = clean_dict_to_serialize(dict(request.data))            
+            data_dict = dict(request.data)           
 
             #print(f'token found from header {token_from_res}')
             if token_from_res == "":
@@ -331,7 +348,7 @@ def handle_owner(request):
         ip_of_host_from_header = header_info['REMOTE_ADDR']
         
         
-        clean_data_dict = clean_dict_to_serialize(dict(request.data))
+        clean_data_dict = dict(request.data)
         pprint(clean_data_dict)
         
         #hashing the password
@@ -896,21 +913,29 @@ def add_product_in_the_store_inventory(request):
       
 @api_view(['POST'])
 def add_business_employee(request):
-    
+    header_info = request.META
     if request.method == 'POST':
         
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        
-        serializer =  EmployeeSerializer(data=data_dict)
-        if serializer.is_valid():
-            employee_instance = serializer.save()
-            return Response(employee_instance)
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
+                
+            
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                
+                serializer =  EmployeeSerializer(data=data_dict)
+                if serializer.is_valid():
+                    employee_instance = serializer.save()
+                    return Response(employee_instance)
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                    return Response({'error':error_list_for_response}) 
+            else:
+                return Response({'access':'denied'})
         else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})       
+            return Response({'access':'denied'})      
 
 
 @api_view(['POST'])
@@ -992,7 +1017,12 @@ def jwt_header_auth(header):
 
 
 
-
+@api_view(['POST'])
+def handle_employee_signup(request):
+    if request.method == 'POST':
+        
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        pass
 
 
 @api_view(['POST' , 'PATCH'])
@@ -1005,18 +1035,19 @@ def handle_employee_login(request):
         data_dict['modified_on'] = datetime.now()
         
         #Cheking If the employee id Exists in the EmployeeMaster Database
-        check_employee = list(EmployeeMaster.objects.filter(pk = data_dict['employee']).values('name' , 'credential' , 'store'))
+        check_employee = list(EmployeeMaster.objects.filter(pk = data_dict['employee']).values('name' , 'credential' ,'business'))
         
         if len(check_employee) == 0:
             return Response({'access':'denied'})
-        
-        if check_employee[0]['password'] != data_dict['password']:
+        '''
+        if check_employee[0]['credential__password'] != data_dict['password']:
             return Response({'access':'denied'})
+        '''
         #If the employee is already in EmployeeCredential table the data no more rows can be created with the same employee ID through POST method We'll Implement PATCH method for that bruv :)
         if check_employee[0]['credential'] != None:
             print('|||||||||||||||||||||')
             
-            return Response({'employee':check_employee[0]['name'] , 'store':check_employee[0]['store']})
+            return Response({'employee':check_employee[0]['name'] , 'business':check_employee[0]['business']})
         #Now Checking If the employee is already in  the EmployeeCredential Table
         
         
@@ -1024,15 +1055,17 @@ def handle_employee_login(request):
         employee_credential_serializer = EmployeeCredentialSerializer(data = data_dict)
         
         if employee_credential_serializer.is_valid():
-            employee_jwt = create_jwt(employee_id = data_dict['employee'] , hashed_pass= data_dict['password'] , employee=True , owner=False)
+            employee_jwt = create_jwt(employee_id = data_dict['employee'] , hashed_pass= data_dict['password'] , employee=True , owner=False , owner_id=None)
             data_dict['jwt'] = employee_jwt
             employee_credential_serializer.save()
             
             #now adding the generated employee auth json web token in EmployeeAuth table
             
             #adding the store in the data dict for employeeAuth Table
-            data_dict['store'] = check_employee[0]['store']
+            data_dict['business'] = check_employee[0]['business']
+            
             data_dict['have_access'] = True 
+            pprint(data_dict)
             employee_auth_serializer = EmployeeAuthSerializer(data = data_dict)
             
             if employee_auth_serializer.is_valid():
@@ -1092,6 +1125,40 @@ def handle_employee_auth(request):
     if request.method == 'POST':
         pass
         
+@api_view(['POST'])
+def handle_supplier(request):
+    
+    header_info = request.META
+    if request.method == 'POST':
         
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            token = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+            
+            data_dict = clean_dict_to_serialize(dict(request.data))
+            data_dict['date_of_entry'] = datetime.now()
+            
+            serializer = SupplierMasterSerializer(data= data_dict)
+            if serializer.is_valid():
+                supplier_instance = serializer.save()
+                data_dict['supplied_id'] = supplier_instance.pk
+                return Response(data_dict)
+            else:
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response =[]
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})               
+        
+        else:
+            return Response({'access':'denied'})
+        
+        
+
+@api_view(['POST , GET'])
+def supplier_register(request):
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        pprint(data_dict)
+    
      
           

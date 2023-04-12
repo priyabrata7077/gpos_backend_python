@@ -78,7 +78,7 @@ class EmployeeMaster(models.Model):
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=200 , blank=False)
     adhaar = models.CharField(max_length=12 , blank=False , unique=True)
-    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='employee')
+    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='employee' , null = True)
 
     def __str__(self):
         return f' {self.name} -> ID {self.pk} '
@@ -96,7 +96,7 @@ class EmployeeCredential(models.Model):
 
 class EmployeeAuth(models.Model):
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='authentication')
-    store = models.ForeignKey(storeMaster , related_name='employee_auth' , on_delete=models.DO_NOTHING)
+    business = models.ForeignKey(Business , related_name='employee_auth' , on_delete=models.DO_NOTHING , null=True)
     jwt = models.CharField(max_length=300)
     have_access = models.BooleanField()
 
@@ -334,9 +334,10 @@ class ReturnTransactionDetails(models.Model):
     def __str__(self):
         return f' EM -> {self.employee} | store -> {self.store}'    
 
-class DealerMaster(models.Model):
+class SupplierMaster(models.Model):
     date_of_entry = models.DateTimeField()
-    dealer_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
+    store = models.ForeignKey(storeMaster , related_name='supplier' , on_delete=models.DO_NOTHING , null=True)
     
     def __str__(self):
         return f'{self.dealer_name}'
@@ -353,11 +354,15 @@ class ReturnSalesPending(models.Model):
     def __str__(self):
         return f'{self.date_of_entry} | {self.bill_ID} | {self.customer}'
 
+class PurchasePending(models.Model):
+    date = models.DateField()
+    supplier = models.ForeignKey(SupplierMaster , related_name = 'purchasepending' , on_delete=models.DO_NOTHING )
+    
+
 
 class PurchaseRegister(models.Model):
-    
     date_and_time = models.DateTimeField()
-    dealer = models.ForeignKey(DealerMaster , on_delete=models.DO_NOTHING , related_name = 'prchaseregister')
+    supplier = models.ForeignKey(SupplierMaster , on_delete=models.DO_NOTHING , related_name = 'prchaseregister')
     '''
     product_structure = {
         'product_id':'5'
@@ -369,7 +374,8 @@ class PurchaseRegister(models.Model):
     
     products = models.ForeignKey(Product , related_name = 'purchaseregister' , on_delete=models.DO_NOTHING)
     quantity = models.CharField(max_length=20)
-    
+    store = models.ForeignKey(storeMaster , related_name='purchaseregister' , on_delete=models.DO_NOTHING , null=True)
+   
     def __str__(self):
         return f" dealer_ID ->  {self.dealer.pk} name-> {self.dealer.dealer_name} | {self.products} + {self.quantity}"
     
@@ -395,9 +401,10 @@ class EmployeeAttendance(models.Model):
     def __str__(self):
         return f' {self.date} ->  {self.employee} -> {self.store} '
 
-
-
 '''
+class PurchaseRegister:
+    pass
+
 class CategoriesMaster(models.Model):
     name = models.CharField()
 '''

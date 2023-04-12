@@ -48,10 +48,16 @@ urlpatterns = [
     path('business/product-master' , views.handle_product_master , name = 'add-product-in-business' ),
     
     #paths for adding elements in a store under a business
+    
+    path('business/store/supplier/add' , views.handle_supplier , name = 'add-aupplier'),
     path('business/employee/add' , views.add_business_employee , name = 'add-employee-in-store'),
     path('business/store/inventory' , views.add_product_in_the_store_inventory, name = 'add-products-in-the-store-inventory'),
     path('business/store/products/return' , views.handle_product_return , name = 'manage-return-from-customer-in-a-store' ),
-    path('business/store/employee/login' , views.handle_employee_login , name = 'manage-return-from-customer-in-a-store' )
+    
+    path('business/store/employee/signup' , views.handle_employee_signup , name = 'employee-signup' ),
+    path('business/store/employee/login' , views.handle_employee_login , name = 'employee-login' ),
+    
+    path('business/store/purchase-register' , views.supplier_register , name = 'handle-purchase-register' )
     
     #path('handle-business/store-inventory' , views.handle_store_inventory , name = 'handle-store-inventory')
 ]
