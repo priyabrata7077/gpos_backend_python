@@ -354,13 +354,27 @@ class ReturnSalesPending(models.Model):
     def __str__(self):
         return f'{self.date_of_entry} | {self.bill_ID} | {self.customer}'
 
-class PurchasePending(models.Model):
-    date = models.DateField()
-    supplier = models.ForeignKey(SupplierMaster , related_name = 'purchasepending' , on_delete=models.DO_NOTHING )
-    product = models.CharField(max_length=100)
-    product_quantity = models.CharField(max_length=20)
-    quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' , 'pieces') , ('LTR' , 'litre') , ('MTR' , 'meter')])
+
+
+class PurchaseBill(models.Model):
+    created_at = models.DateTimeField()
+    bill_id = models.CharField(max_length=100)
     
+    def __str__(self):
+        return f'{self.bill_id}'
+    
+
+class PurchasePending(models.Model):
+    date_and_time = models.DateTimeField(null=True)
+    supplier = models.ForeignKey(SupplierMaster , related_name = 'purchasepending' , on_delete=models.DO_NOTHING )
+    products = models.ForeignKey(Product , related_name='purchasepending' , on_delete=models.DO_NOTHING , null=True)
+    quantity = models.CharField(max_length=20)
+    purchase_rate = models.CharField(max_length=100)
+    store = models.ForeignKey(storeMaster , related_name='purchasepending' , on_delete=models.DO_NOTHING , null=True)
+    total = models.CharField(max_length=100 , null=True)
+    
+    def __str__(self):
+        return f'{self.supplier.name} | {self.products} | {self.quantity}'
 
 
 class PurchaseRegister(models.Model):
@@ -378,8 +392,9 @@ class PurchaseRegister(models.Model):
     products = models.ForeignKey(Product , related_name = 'purchaseregister' , on_delete=models.DO_NOTHING)
     
     quantity = models.CharField(max_length=20)
+    purchase_rate = models.CharField(max_length=100 , null=True)
     store = models.ForeignKey(storeMaster , related_name='purchaseregister' , on_delete=models.DO_NOTHING , null=True)
-    total = models.CharField(max_length=100)
+    total = models.CharField(max_length=100 , null=True)
     def __str__(self):
         return f" dealer_ID ->  {self.supplier.pk} name-> {self.supplier.name} | {self.products} + {self.quantity}"
     

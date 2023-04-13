@@ -6,7 +6,7 @@ from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer
 
 
 from rest_framework.decorators import api_view
@@ -368,7 +368,7 @@ def handle_owner(request):
             #user_token = gen_token()
             
             #creating a jwt (Json Web Token) with the owner id and his/her hashed password as payload
-            user_jwt = create_jwt(owner_id = owner_instance.pk , hashed_pass = clean_data_dict['password'] , employee=False)
+            user_jwt = create_jwt(owner_id = owner_instance.pk , hashed_pass =  clean_data_dict['password'] , employee=False)
 
             user_token_expiry = expiry_time_calc(86400)
             user_auth = JwtAuth(jwt=user_jwt , expiry = user_token_expiry)
@@ -1155,23 +1155,29 @@ def handle_supplier(request):
         
 
 @api_view(['POST'])
-def purchase_register(request):
+def purchase_pending(request):
     if request.method == 'POST':
         data_dict = clean_dict_to_serialize(dict(request.data))
         pprint(data_dict)
         
         data_dict['date_and_time'] = datetime.now()
         
-        serializer = PurchaseRegisterSerializer(data = data_dict)
-        if serializer.is_valid():
-            pur_reg_instance = serializer.save()
-            return Response({'operation':'successful'})
-        else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})            
+        product_purchase_rate = Product.objects.filter(pk=data_dict['products']).values('MRP' , 'purchase_rate')
+        print("nigga what?")
+        if product_purchase_rate.exists():
+            dict_product_data = list(product_purchase_rate)[0]
+            data_dict['total'] = float(dict_product_data['purchase_rate']) * float(data_dict['quantity'])
+            data_dict['purchase_rate'] = dict_product_data['purchase_rate']
+            serializer = PurchasePendingSerializer(data = data_dict)
+            if serializer.is_valid():
+                pur_reg_instance = serializer.save()
+                return Response({'operation':'successful'})
+            else:
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response =[]
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})            
             
 
     
