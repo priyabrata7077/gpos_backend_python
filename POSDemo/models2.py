@@ -378,6 +378,7 @@ class PurchasePending(models.Model):
 
 
 class PurchaseRegister(models.Model):
+    bill_id = models.CharField(max_length=100 , null=True)
     date_and_time = models.DateTimeField()
     supplier = models.ForeignKey(SupplierMaster , on_delete=models.DO_NOTHING , related_name = 'prchaseregister')
     '''
@@ -396,7 +397,7 @@ class PurchaseRegister(models.Model):
     store = models.ForeignKey(storeMaster , related_name='purchaseregister' , on_delete=models.DO_NOTHING , null=True)
     total = models.CharField(max_length=100 , null=True)
     def __str__(self):
-        return f" dealer_ID ->  {self.supplier.pk} name-> {self.supplier.name} | {self.products} + {self.quantity}"
+        return f" BILL_ID -> {self.bill_id}  | supplier_id ->  {self.supplier.pk} name-> {self.supplier.name} | {self.products} + {self.quantity}"
     
 class PurchaseTransactionDetails(models.Model):
     date_of_entry = models.DateTimeField()

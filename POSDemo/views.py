@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth , PurchasePending , PurchaseRegister
 
 from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer
 
@@ -1178,8 +1178,44 @@ def purchase_pending(request):
                 for error in serializer_error_dict.keys():
                     error_list_for_response.append(serializer_error_dict[error][0])
                 return Response({'error':error_list_for_response})            
-            
 
+@api_view(['POST'])
+def purchase_register(request):
+    
+        if request.method == 'POST':
+            
+            data_dict = clean_dict_to_serialize(dict(request.data))
+        
+            data_from_purchase_pending = PurchasePending.objects.filter(store = data_dict['store'] ,  supplier = data_dict['supplier'])
+                
+            if data_from_purchase_pending.exists():
+                
+                
+                data_from_sales_register = PurchaseRegister.objects.filter(store = data_dict['store']).order_by('-bill_id').first()
+                
+                if data_from_sales_register == None:
+                    bill_id = 1
+                else:
+                    bill_id = int(model_to_dict(data_from_sales_register)['bill_id']) + 1
+                
+                
+                data_list_from_purchase_pending = []
+                for data in data_from_purchase_pending:
+                    data = model_to_dict(data)
+                    del data['id']
+                    data['bill_id'] = bill_id
+                    data_list_from_purchase_pending.append(data)
+                    
+                serializer = PurchaseRegisterSerializer(data = data_list_from_purchase_pending , many=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({"data":data_list_from_purchase_pending})
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                    return Response({'error':error_list_for_response})  
     
      
           
