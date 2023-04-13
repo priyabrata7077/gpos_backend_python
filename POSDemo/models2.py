@@ -340,7 +340,7 @@ class SupplierMaster(models.Model):
     store = models.ForeignKey(storeMaster , related_name='supplier' , on_delete=models.DO_NOTHING , null=True)
     
     def __str__(self):
-        return f'{self.dealer_name}'
+        return f'{self.name} | pk -> {self.pk}'
 
 class ReturnSalesPending(models.Model):
     date_of_entry = models.DateTimeField()
@@ -357,6 +357,9 @@ class ReturnSalesPending(models.Model):
 class PurchasePending(models.Model):
     date = models.DateField()
     supplier = models.ForeignKey(SupplierMaster , related_name = 'purchasepending' , on_delete=models.DO_NOTHING )
+    product = models.CharField(max_length=100)
+    product_quantity = models.CharField(max_length=20)
+    quantity_type = models.CharField(max_length=5 , choices=[('GM' , 'gram') , ('PIECE' , 'pieces') , ('LTR' , 'litre') , ('MTR' , 'meter')])
     
 
 
@@ -373,11 +376,12 @@ class PurchaseRegister(models.Model):
     '''
     
     products = models.ForeignKey(Product , related_name = 'purchaseregister' , on_delete=models.DO_NOTHING)
+    
     quantity = models.CharField(max_length=20)
     store = models.ForeignKey(storeMaster , related_name='purchaseregister' , on_delete=models.DO_NOTHING , null=True)
-   
+    total = models.CharField(max_length=100)
     def __str__(self):
-        return f" dealer_ID ->  {self.dealer.pk} name-> {self.dealer.dealer_name} | {self.products} + {self.quantity}"
+        return f" dealer_ID ->  {self.supplier.pk} name-> {self.supplier.name} | {self.products} + {self.quantity}"
     
 class PurchaseTransactionDetails(models.Model):
     date_of_entry = models.DateTimeField()
@@ -401,10 +405,18 @@ class EmployeeAttendance(models.Model):
     def __str__(self):
         return f' {self.date} ->  {self.employee} -> {self.store} '
 
-'''
+'''int
 class PurchaseRegister:
     pass
 
 class CategoriesMaster(models.Model):
     name = models.CharField()
 '''
+class Daily_employee_management(models.Model):
+    date = models.DateField()
+    employee = models.ForeignKey(EmployeeMaster , related_name = 'dailymanager' , on_delete=models.DO_NOTHING)
+    designation = models.CharField(max_length=100)
+    store = models.ForeignKey(storeMaster , related_name='dailymanager' , on_delete=models.DO_NOTHING)
+    
+    def __str__(self):
+        return f'{self.employee} , {self.designation}'

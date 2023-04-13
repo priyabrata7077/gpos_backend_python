@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
-from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster
+from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister
 
 class OwnerSerializer(serializers.ModelSerializer):
     
@@ -89,4 +89,7 @@ class SupplierMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierMaster
         fields = '__all__'
-
+class PurchaseRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseRegister
+        fields = '__all__'

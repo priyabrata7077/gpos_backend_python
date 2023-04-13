@@ -6,7 +6,7 @@ from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer
 
 
 from rest_framework.decorators import api_view
@@ -235,7 +235,7 @@ def handle_logout(request):
     header_info = request.META
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
-            if header_info['HTTP_AUTHORIZATION'] != '':
+            if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
                 jwt_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
                 
                 #checking if its in jwtauth table
@@ -308,29 +308,29 @@ def handle_owner_details(request):
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_AUTHORIZATION']
-            print(f'token found from header {token_from_res}')
-            if token_from_res.split(' ')[1] == "":
-                return Response({'token':"Null"})
-            token_status , token_expiry , associated_user_id = check_token_validity(token_from_res , need_business_id=False)
+            jwt_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+            print(f'token found from header {jwt_from_res}')
+            if jwt_from_res == "":
+                return Response({'access':"denied"})
+            token_status , owner_id = check_jwt_validity(jwt_from_res)
             print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||')
             #checking if the token has expired with the help of the custom function check_token_expiry()
-            if check_token_expiry(int(token_expiry)) == True:
-                if token_status == True:
-                    data_dict = clean_dict_to_serialize(dict(request.data))
-                    data_dict['owner_id'] = associated_user_id
-                    data_dict['date_of_entry'] = datetime.now().date()
-                    serializer = OwnerDetailsSerializer(data = data_dict)
-                    
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(data_dict)
-                    else:
-                        serializer_error_dict = dict(serializer.errors)
-                        error_list_for_response =[]
-                        for error in serializer_error_dict.keys():
-                            error_list_for_response.append(serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
+            
+            if token_status == True:
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                data_dict['owner_id'] = owner_id
+                data_dict['date_of_entry'] = datetime.now().date()
+                serializer = OwnerDetailsSerializer(data = data_dict)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(data_dict)
+                else:
+                    serializer_error_dict = dict(serializer.errors)
+                    error_list_for_response =[]
+                    for error in serializer_error_dict.keys():
+                        error_list_for_response.append(serializer_error_dict[error][0])
+                    return Response({'error':error_list_for_response})
                         
 
             else:
@@ -1154,11 +1154,26 @@ def handle_supplier(request):
         
         
 
-@api_view(['POST , GET'])
-def supplier_register(request):
+@api_view(['POST'])
+def purchase_register(request):
     if request.method == 'POST':
         data_dict = clean_dict_to_serialize(dict(request.data))
         pprint(data_dict)
+        
+        data_dict['date_and_time'] = datetime.now()
+        
+        serializer = PurchaseRegisterSerializer(data = data_dict)
+        if serializer.is_valid():
+            pur_reg_instance = serializer.save()
+            return Response({'operation':'successful'})
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})            
+            
+
     
      
           
