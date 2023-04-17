@@ -58,8 +58,9 @@ urlpatterns = [
     path('business/store/employee/login' , views.handle_employee_login , name = 'employee-login' ),
     
     path('business/store/purchase/pending' , views.purchase_pending , name = 'handle-purchase-pending' ),
-    path('business/store/purchase/register' , views.purchase_register , name = 'handle-purchase-register' )
-    
+    path('business/store/purchase/register' , views.purchase_register , name = 'handle-purchase-register' ),
+    path('business/store/purchase/transaction' , views.handle_purchase_transaction , name = 'handle-purchase-transaction' )
+
     #path('handle-business/store-inventory' , views.handle_store_inventory , name = 'handle-store-inventory')
 ]
 

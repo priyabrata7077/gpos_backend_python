@@ -6,7 +6,7 @@ from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth , PurchasePending , PurchaseRegister
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer , PurchaseTransactionSerializer
 
 
 from rest_framework.decorators import api_view
@@ -629,7 +629,7 @@ def handle_sales_register(request):
                     new_bill_pk = genBillSerializer.save()
 
                 #sleep(5)
-                data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'product_name' , 'mrp' , 'purchase_rate' , 'sale_rate' , 'row_total')
+                data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'mrp' , 'purchase_rate' , 'sale_rate')
                 pprint(list(data_from_sales_pending))
                 
                 data_from_sales_pending_with_bill_id = []
@@ -1217,5 +1217,44 @@ def purchase_register(request):
                         error_list_for_response.append(serializer_error_dict[error][0])
                     return Response({'error':error_list_for_response})  
     
-     
-          
+@api_view(['POST'])
+def handle_purchase_transaction(request):
+    header_info = request.META
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        data_dict['date_of_entry'] = datetime.now()
+        
+        
+        stripped_mop = data_dict['mop'][1:-1].split(',')
+        data_dict['mop'] = stripped_mop
+        
+        
+        
+        
+        data_from_purchase_register = PurchaseRegister.objects.filter(bill_id = data_dict['bill_id']).values('supplier' , 'total')
+        
+        if data_from_purchase_register.exists():
+            supplier = data_from_purchase_register[0]['supplier']
+            print(supplier)
+            data_dict['supplier_id'] = supplier
+           
+        else:
+            return Response({'Error':'occured'})
+        
+        mop_names_and_amout_dict = [ { 'mop_name' : list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['name'] ,'mop_id' :  list(ModeOfPayment.objects.filter(pk = data2.split(':')[0]).values('name' , 'pk'))[0]['pk'] ,  'amount_paid' : data2.split(':')[1] } for data2 in stripped_mop]
+    
+        data_dict['mop'] = mop_names_and_amout_dict
+        
+        serializer = PurchaseTransactionSerializer(data = data_dict)
+        
+        if serializer.is_valid():
+            transaction_instance = serializer.save
+            return Response({'Operation':'Success'})
+        
+        else:
+            
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})

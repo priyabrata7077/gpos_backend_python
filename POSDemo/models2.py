@@ -186,6 +186,17 @@ class storeInventoryMaster(models.Model):
         return f'{self.product} - {self.associated_store}'
 
 
+class InventoryManager(models.Model):
+    updated_at = models.DateTimeField()
+    product = models.ForeignKey(Product , related_name='inventorymanager' , on_delete=models.DO_NOTHING)
+    action = models.CharField(max_length=1 , choices=[('A' , 'added') , ('R' ,'removed')] )
+    quantiy = models.CharField(max_length=100)
+    store = models.ForeignKey(storeMaster , related_name='inventorymanager' , on_delete=models.DO_NOTHING)
+    reason = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f'Product - {self.product} has been {self.action}'
+    
 
 
 #Sales page components  ,  Barcode , stock register , sales pending , Sales Register , Transaction Details
@@ -200,9 +211,10 @@ class ModeOfPayment(models.Model):
 
 class Barcode(models.Model):
     barcode = models.CharField(max_length=50)
-    
+    product = models.ForeignKey(Product , related_name='barcode' , on_delete=models.DO_NOTHING , null=True)
+    store = models.ForeignKey(storeMaster , related_name='barcode' , on_delete=models.DO_NOTHING , null=True)
     def __str__(self):
-        return f'{self.barcode} - ID -> {self.pk} '
+        return f'{self.barcode} - Product -> {self.product} '
 
 
 class GenBill(models.Model):
@@ -226,7 +238,7 @@ class TransactionDetailsMaster(models.Model):
     def __str__(self):
         return f' EM -> {self.employee} | store -> {self.store}'
     
-    
+   
 
 
 
@@ -247,11 +259,11 @@ class SalesRegister(models.Model):
     product_quantity = models.CharField(max_length=100)
     
     
-    product_name = models.CharField(max_length=100 , null =True)
+    #product_name = models.CharField(max_length=100 , null =True)
     mrp = models.CharField(max_length=50 ,null =True)
     purchase_rate = models.CharField(max_length=50, null =True)
     sale_rate = models.CharField(max_length=20 ,null =True)
-    row_total = models.CharField(max_length=100, null =True)
+    #row_total = models.CharField(max_length=100, null =True)
     
     def __str__(self):
         return f' salesReg_pk -> {self.pk} | {self.bill_ID} - {self.row_total}'
@@ -400,12 +412,14 @@ class PurchaseRegister(models.Model):
         return f" BILL_ID -> {self.bill_id}  | supplier_id ->  {self.supplier.pk} name-> {self.supplier.name} | {self.products} + {self.quantity}"
     
 class PurchaseTransactionDetails(models.Model):
+    bill_id = models.CharField(max_length=100 , null = True)
+    supplier_id = models.ForeignKey(SupplierMaster , related_name='purchasetransaction' , on_delete=models.DO_NOTHING , null=True)
     date_of_entry = models.DateTimeField()
-    related_purchase = models.ForeignKey(PurchaseRegister , on_delete=models.DO_NOTHING , related_name = 'purtransactiondetails')
+    #related_purchase = models.ForeignKey(PurchaseRegister , on_delete=models.DO_NOTHING , related_name = 'purtransactiondetails')
     mop = models.JSONField()
     
     def __str__(self):
-        return f' {self.date_of_entry} -- {self.related_purchase} '
+        return f' {self.date_of_entry} -- {self.bill_id} '
 
 
     
@@ -436,3 +450,5 @@ class Daily_employee_management(models.Model):
     
     def __str__(self):
         return f'{self.employee} , {self.designation}'
+
+
