@@ -442,6 +442,27 @@ class PurchaseRegister:
 class CategoriesMaster(models.Model):
     name = models.CharField()
 '''
+
+
+class Roles(models.Model):
+    role = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f'{self.role}'
+
+class Permissions(models.Model):
+    permission = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f'{self.permission}'
+
+'''
+class RolesHasPermission(models.Model):
+    pass
+'''
+
 class Daily_employee_management(models.Model):
     date = models.DateField()
     employee = models.ForeignKey(EmployeeMaster , related_name = 'dailymanager' , on_delete=models.DO_NOTHING)
