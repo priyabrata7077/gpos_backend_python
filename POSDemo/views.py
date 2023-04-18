@@ -57,7 +57,11 @@ def check_jwt_validity(jwt_from_api):
                 if len(check_owner) == 0:
                     return False , None
                 else:
-                    return True , check_owner[0]['pk']
+                    jwt_expiry = check_jwt_in_db[0]['expiry']
+                    if jwt_expiry < datetime.now(tz=timezone.utc):
+                        return True , check_owner[0]['pk']
+                    else:
+                        return False , None
         if 'employee' in decoded_jwt.keys():
             employee_id = decoded_jwt['employee']
             pass_hash = decoded_jwt['pass']
@@ -370,7 +374,7 @@ def handle_owner(request):
             #creating a jwt (Json Web Token) with the owner id and his/her hashed password as payload
             user_jwt = create_jwt(owner_id = owner_instance.pk , hashed_pass =  clean_data_dict['password'] , employee=False)
 
-            user_token_expiry = expiry_time_calc(86400)
+            user_token_expiry = datetime.now() + timedelta(days=1)
             user_auth = JwtAuth(jwt=user_jwt , expiry = user_token_expiry)
             user_auth.save()
             
@@ -916,24 +920,25 @@ def add_business_employee(request):
     header_info = request.META
     if request.method == 'POST':
         
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-            if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
+        if 'HTTP_AUTHORIZATION' not in header_info.keys():
+            #if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
                 
             
-                data_dict = clean_dict_to_serialize(dict(request.data))
-                
-                serializer =  EmployeeSerializer(data=data_dict)
-                if serializer.is_valid():
-                    employee_instance = serializer.save()
-                    return Response(employee_instance)
-                else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response =[]
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response}) 
+            data_dict = dict(request.data)
+            print(data_dict)
+            serializer =  EmployeeSerializer(data=data_dict)
+            if serializer.is_valid():
+                employee_instance = serializer.save()
+                data_dict['id'] = employee_instance.pk
+                return Response(data_dict)
             else:
-                return Response({'access':'denied'})
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response =[]
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response}) 
+            #else:
+            #    return Response({'access':'denied'})
         else:
             return Response({'access':'denied'})      
 

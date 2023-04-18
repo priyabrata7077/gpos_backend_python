@@ -1,7 +1,6 @@
 from django.db import models
 
 class Owner(models.Model):
-   
     name = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)
     password = models.CharField(blank=False , max_length=100 , unique=True)
@@ -462,6 +461,9 @@ class Permissions(models.Model):
 class RolesHasPermission(models.Model):
     pass
 '''
+
+
+
 
 class Daily_employee_management(models.Model):
     date = models.DateField()
