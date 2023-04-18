@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models2 import Owner , Business , storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails , SalesRegister , ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending
+from .models2 import Owner , Business , storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails , SalesRegister , ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission
 '''
 admin.site.register(ProductInventoryManagement)
 admin.site.register(Day_Wise_Employee_Management)
@@ -42,3 +42,5 @@ admin.site.register(PurchaseTransactionDetails),
 admin.site.register(SupplierMaster)
 admin.site.register(Daily_employee_management)
 admin.site.register(PurchasePending)
+admin.site.register(Roles)
+admin.site.register(Permission)

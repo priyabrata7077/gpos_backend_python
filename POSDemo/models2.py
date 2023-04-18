@@ -441,21 +441,21 @@ class PurchaseRegister:
 class CategoriesMaster(models.Model):
     name = models.CharField()
 '''
-
-
-class Roles(models.Model):
-    role = models.CharField(max_length=30)
-    description = models.CharField(max_length=100)
-    
-    def __str__(self):
-        return f'{self.role}'
-
-class Permissions(models.Model):
+class Permission(models.Model):
     permission = models.CharField(max_length=30)
     description = models.CharField(max_length=100)
 
     def __str__(self):
         return f'{self.permission}'
+
+class Roles(models.Model):
+    role = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+    permisssions = models.ManyToManyField(Permission , related_name='roles')
+    def __str__(self):
+        return f'{self.role} - {self.description}'
+
+
 
 '''
 class RolesHasPermission(models.Model):
