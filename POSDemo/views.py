@@ -338,7 +338,7 @@ def handle_owner_details(request):
                         
 
             else:
-                return Response({'token':'expired'})
+                return Response({"access":"denied"})
                 
 
     
@@ -393,10 +393,13 @@ def handle_owner(request):
             token_from_header = header_info['HTTP_AUTHORIZATION']
             if token_from_header.split(' ')[1] == " ":
                 return Response({'token':'NULL'})
-        token_status , token_expiry , associated_business_id = check_token_validity(token_from_header)
-        print(f'{token_status} -+ -+ -+ -+ -+ {token_expiry} -+ -+ -+ -+ -+ {associated_business_id}')
+        token_status , owner_pk = check_jwt_validity(token_from_header)
+        print(f'{token_status} -+ -+ -+ -+ -+ {owner_pk}')
         if token_status == True:
             data = request.data
+            return Response({'access':'granted'})
+        else:
+            return Response({'access':'denied'})
 
 
 @api_view(['POST'])
@@ -404,17 +407,17 @@ def handle_store(request):
 
     if request.method == 'POST':
         header_info = request.META
-        if 'HTTP_BEARER_TOKEN' in header_info.keys():
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_BEARER_TOKEN']
+            token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             if token_from_res == "":
-                return Response({'token':"Null"})
-            token_status , token_expiry , associated_business_id = check_token_validity(token_from_res)
-            print(f'{token_status} =========== {token_expiry} ========== {associated_business_id}')
+                return Response({'access':'denied'})
+            token_status , owner_pk = check_token_validity(token_from_res)
+            print(f'{token_status} =========== {owner_pk}')
             if token_status == True:
                 data = request.data
                 data_dict = clean_dict_to_serialize(dict(data))
-                data_dict['associated_business'] =associated_business_id
+                data_dict['associated_owner'] = owner_pk
                 print(data_dict)
                 #data_dict['associated_business'] = list(associated_business_id)
                 serializer = StoreSerializer(data = data_dict)
@@ -423,7 +426,7 @@ def handle_store(request):
                 if serializer.is_valid() == True:
                     print(data)
                     serializer.save()
-                    return Response({'user':'valid' , 'token TTL':token_expiry , 'store-data-addition':'success'})
+                    return Response({'user':'valid' , 'store-data-addition':'success'})
                 else:
                     serializer_error_dict = dict(serializer.errors)
                     error_list_for_response = []
@@ -511,7 +514,6 @@ def get_all_stores_from_business_id(request):
 def handle_customer_details(request):
     
     if request.method == 'GET':
-        
         data = request.data
         data_dict =clean_dict_to_serialize(dict(data))
         
@@ -613,71 +615,78 @@ def handle_sales_register(request):
     #print(header_info)
     if 'HTTP_AUTHORIZATION' in header_info.keys():
         if header_info['HTTP_AUTHORIZATION'] != '':
-            if request.method =='POST':
-                data_dict = clean_dict_to_serialize(dict(request.data))
-                bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
-                print('6566666666666666666666666666666666666666666666666666666666666666')
-                print(f'{data_dict["store"]}  ============{data_dict["employee"]}')
+            token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+            print(f'Token Found From HEADER -> {token_from_header}')
+            token_status , owner_pk  = check_jwt_validity(token_from_header)
+            
+            if token_status == True:
+                if request.method =='POST':
+                    data_dict = clean_dict_to_serialize(dict(request.data))
+                    bill_from_store = GenBill.objects.filter(store=data_dict['store']).order_by('-pk').values('pk' , 'bill_id').first()
+                    print('6566666666666666666666666666666666666666666666666666666666666666')
+                    print(f'{data_dict["store"]}  ============{data_dict["employee"]}')
 
-                if bill_from_store == None:
-                    new_bill_id = 1
-                    generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
+                    if bill_from_store == None:
+                        new_bill_id = 1
+                        generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now() , 'store' : int(data_dict['store']) }
+                        
+                    else:
                     
-                else:
-                
-                    new_bill_id = int(bill_from_store['bill_id']) +1
-                    generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
-                    
-                genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
-                if genBillSerializer.is_valid():
-                    new_bill_pk = genBillSerializer.save()
+                        new_bill_id = int(bill_from_store['bill_id']) +1
+                        generate_bill_dict = {'bill_id' : new_bill_id, 'time' : datetime.now(), 'store' : int(data_dict['store'])}
+                        
+                    genBillSerializer = GenerateBillSerializer(data=generate_bill_dict)
+                    if genBillSerializer.is_valid():
+                        new_bill_pk = genBillSerializer.save()
 
-                #sleep(5)
-                data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'mrp' , 'purchase_rate' , 'sale_rate')
-                pprint(list(data_from_sales_pending))
-                
-                data_from_sales_pending_with_bill_id = []
-                for sales_pending_dict in list(data_from_sales_pending):
-                    print(sales_pending_dict)
+                    #sleep(5)
+                    data_from_sales_pending = SalesPending.objects.filter(store = int(data_dict['store']) , employee=int(data_dict['employee']) ).values( 'business' ,'store' , 'employee' ,'product' , 'gst' , 'product_quantity' , 'mrp' , 'purchase_rate' , 'sale_rate')
+                    pprint(list(data_from_sales_pending))
                     
-                    #handling of removal of purchased products from  store Inventory
-                    update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
-                    sales_pending_dict['bill_ID'] = new_bill_pk.pk
-                    sales_pending_dict['bill_no'] = new_bill_id
-                    '''
-                    print()
-                    print(sales_pending_dict)
-                    print(' 0000000000000000000000000000000000 ')
-                    '''
-                    data_from_sales_pending_with_bill_id.append(sales_pending_dict)
+                    data_from_sales_pending_with_bill_id = []
+                    for sales_pending_dict in list(data_from_sales_pending):
+                        print(sales_pending_dict)
+                        
+                        #handling of removal of purchased products from  store Inventory
+                        update_removed_product_from_store_inventory(sales_pending_dict['product'] , sales_pending_dict['product_quantity'] , sales_pending_dict['store'])
+                        sales_pending_dict['bill_ID'] = new_bill_pk.pk
+                        sales_pending_dict['bill_no'] = new_bill_id
+                        '''
+                        print()
+                        print(sales_pending_dict)
+                        print(' 0000000000000000000000000000000000 ')
+                        '''
+                        data_from_sales_pending_with_bill_id.append(sales_pending_dict)
 
-                sales_register_serializer  = SalesRegisterSerializer(data = data_from_sales_pending_with_bill_id , many=True)
-                if sales_register_serializer.is_valid():
-                    sales_register_serializer.save()
+                    sales_register_serializer  = SalesRegisterSerializer(data = data_from_sales_pending_with_bill_id , many=True)
+                    if sales_register_serializer.is_valid():
+                        sales_register_serializer.save()
 
-                    #handling of removal of data from sales pending data base
-                    
-                    
-                    
-                    SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
-                    
-                    
-                    
-                    
-                    print('Data has been removed from sales pending successfully')
-                    
-                    #handle putting data in paymentdetailsmaster table here
-                    #list_data = list(data_dict['mop_amt'])
-                    
-                    
-                    return Response(data_from_sales_pending_with_bill_id)
-                    
-                    
+                        #handling of removal of data from sales pending data base
+                        
+                        
+                        
+                        SalesPending.objects.filter(store = data_dict['store'] , employee=data_dict['employee'] ).delete()
+                        
+                        
+                        
+                        
+                        print('Data has been removed from sales pending successfully')
+                        
+                        #handle putting data in paymentdetailsmaster table here
+                        #list_data = list(data_dict['mop_amt'])
+                        
+                        
+                        return Response(data_from_sales_pending_with_bill_id)
+                        
+                        
 
-                    #return Response({'data':list(data_from_sales_pending_with_bill_id)})
-                else:
-        
-                    return Response(sales_register_serializer.errors)
+                        #return Response({'data':list(data_from_sales_pending_with_bill_id)})
+                    else:
+            
+                        return Response(sales_register_serializer.errors)
+            else:
+                return Response({'access':'denied'})
         else:
             return Response({'access':'denied'})
     else:
@@ -734,6 +743,14 @@ def handle_sales_pending(request):
         
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] != '':
+                
+                token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+                
+                token_status , owner_pk = check_jwt_validity(token_from_header)
+                
+                if token_from_header == False:
+                    return Response({'access':'denied'})
+                                
                 data_dict = clean_dict_to_serialize(dict(request.data))
                 #serializer = SalesPendingSerializer
                 product_id_from_api = data_dict['product']
