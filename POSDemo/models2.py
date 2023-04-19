@@ -133,7 +133,13 @@ class TaxMaster(models.Model):
 
 
 
-
+class Categories(models.Model):
+    name = models.CharField(max_length=100)
+    parent = models.CharField(max_length=100 , blank=True)
+    store = models.ForeignKey(storeMaster , related_name='category' , on_delete=models.DO_NOTHING)
+    
+    def __str__(self):
+        return f'Name -> {self.name} | Parent -> {self.parent} | store -> {self.store}'
 
 
 
@@ -148,6 +154,7 @@ class Product(models.Model):
     #store = models.ForeignKey(storeMaster , related_name='product' , on_delete=models.DO_NOTHING , blank=True)
     business = models.ForeignKey(Business , related_name='products' , on_delete=models.DO_NOTHING , null=True )
     variable = models.BooleanField(null=True)
+    category = models.ForeignKey(Categories , related_name='product' , on_delete=models.DO_NOTHING , null=True)
     def __str__(self):
         return f'{self.name} - {self.pk}'
  
@@ -463,13 +470,7 @@ class RolesHasPermission(models.Model):
     pass
 '''
 
-class Categories(models.Model):
-    name = models.CharField(max_length=100)
-    parent = models.CharField(max_length=100 , blank=True)
-    store = models.ForeignKey(storeMaster , related_name='category' , on_delete=models.DO_NOTHING)
-    
-    def __str__(self):
-        return f'Name -> {self.name} | Parent -> {self.parent} | store -> {self.store}'
+
     
 
 

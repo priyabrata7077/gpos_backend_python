@@ -79,7 +79,7 @@ def check_jwt_validity(jwt_from_api):
 
 
 
-def create_jwt(owner_id  , hashed_pass , employee_id=None ,  owner=True , employee=False):
+def create_jwt(hashed_pass , owner_id=None ,  employee_id=None ,  owner=True , employee=False):
     
     if owner==True and employee==False:
     
@@ -245,7 +245,7 @@ def handle_logout(request):
                 #checking if its in jwtauth table
                 jwt_exists = list(JwtAuth.objects.filter(jwt = jwt_from_header))
                 if len(jwt_exists) == 0:
-                    return Response({'jwt':'invalid'})
+                    return Response({"access":"denied"})
                 else:
                     jwt_exists[0].delete()
                     print(f'JWT {jwt_from_header} removed successfully on user logout ')
