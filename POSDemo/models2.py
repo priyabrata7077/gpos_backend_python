@@ -78,7 +78,7 @@ class Permission(models.Model):
 class Roles(models.Model):
     role = models.CharField(max_length=30)
     description = models.CharField(max_length=100)
-    permisssions = models.ManyToManyField(Permission , related_name='roles')
+    permissions = models.ManyToManyField(Permission , related_name='roles')
     def __str__(self):
         return f'{self.role} - {self.description}'
 

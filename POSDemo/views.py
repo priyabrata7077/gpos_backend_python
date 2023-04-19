@@ -1348,14 +1348,19 @@ def handle_purchase_transaction(request):
 
 
 
+
 def handle_stock_change(request):
     
     if request.method == 'POST':
         pass
 
+@api_view(['POST'])
+def handle_product_categories(request):
 
-
-
+    if request.method == 'POST':
+        data_dict = clean_dict_to_serialize(dict(request.data))
+        
+        return Response(data_dict)
 
 
 
