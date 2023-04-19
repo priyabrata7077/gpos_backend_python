@@ -750,52 +750,52 @@ def handle_sales_pending(request):
                 
                 if token_from_header == False:
                     return Response({'access':'denied'})
-                                
-                data_dict = clean_dict_to_serialize(dict(request.data))
-                #serializer = SalesPendingSerializer
-                product_id_from_api = data_dict['product']
-                product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
-                if len(product_data) != 0:
-                    
-                    associated_business_store = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
-                        
-                    item_name = list(product_data)[0]['name']
-                    item_mrp = list(product_data)[0]['MRP']
-                    item_purchase_rate = list(product_data)[0]['purchase_rate']
-                    item_sale_rate = list(product_data)[0]['sale_rate']
-                    item_gst = list(product_data)[0]['gst']
-                    '''
-                    product_name = models.CharField(max_length=100)
-                    mrp = models.CharField
-                    purchase_rate = models.CharField(max_length=20)
-                    sale_rate = models.CharField(max_length=20)
-                    gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
-                    row_total =
-                    '''
-                    #now putting the data from product db to salespending db by modifying the requst data_dict
-                    data_dict['product_name'] = item_name
-                    data_dict['mrp'] = item_mrp
-                    data_dict['purchase_rate'] = item_purchase_rate
-                    data_dict['sale_rate'] = item_sale_rate
-                    data_dict['gst'] = str(item_gst)
-                    data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
-                    
-                    #fist getting the associated_business id from store with  .filter.values method and using the store id from request as pk and then setting it in the data dict before serializing the data.
-                    data_dict['business'] = int(associated_business_store[0]['associated_business'])
-                    print(' >->->->->->->->->->->->->->->->->->->->->->')
-                    print(data_dict)
-                    serializer = SalesPendingSerializer(data = data_dict)
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response({'data' : data_dict})
-                    else:
-                        serializer_error_dict = dict(serializer.errors)
-                        error_list_for_response = []
-                        for error in serializer_error_dict.keys():
-                            error_list_for_response.append(serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
                 else:
-                    return Response({'no product in inventory'})
+                    data_dict = clean_dict_to_serialize(dict(request.data))
+                    #serializer = SalesPendingSerializer
+                    product_id_from_api = data_dict['product']
+                    product_data = Product.objects.filter(pk=int(product_id_from_api)).values('name' , 'MRP' , 'purchase_rate' , 'sale_rate' , 'gst')
+                    if len(product_data) != 0:
+                        
+                        associated_business_store = list(storeMaster.objects.filter(pk = data_dict['store']).values('associated_business'))
+                            
+                        item_name = list(product_data)[0]['name']
+                        item_mrp = list(product_data)[0]['MRP']
+                        item_purchase_rate = list(product_data)[0]['purchase_rate']
+                        item_sale_rate = list(product_data)[0]['sale_rate']
+                        item_gst = list(product_data)[0]['gst']
+                        '''
+                        product_name = models.CharField(max_length=100)
+                        mrp = models.CharField
+                        purchase_rate = models.CharField(max_length=20)
+                        sale_rate = models.CharField(max_length=20)
+                        gst = models.ForeignKey(TaxMaster , on_delete=models.DO_NOTHING , related_name='salespending' )
+                        row_total =
+                        '''
+                        #now putting the data from product db to salespending db by modifying the requst data_dict
+                        data_dict['product_name'] = item_name
+                        data_dict['mrp'] = item_mrp
+                        data_dict['purchase_rate'] = item_purchase_rate
+                        data_dict['sale_rate'] = item_sale_rate
+                        data_dict['gst'] = str(item_gst)
+                        data_dict['row_total'] = str(int(data_dict['product_quantity']) * int(item_sale_rate))
+                        
+                        #fist getting the associated_business id from store with  .filter.values method and using the store id from request as pk and then setting it in the data dict before serializing the data.
+                        data_dict['business'] = int(associated_business_store[0]['associated_business'])
+                        print(' >->->->->->->->->->->->->->->->->->->->->->')
+                        print(data_dict)
+                        serializer = SalesPendingSerializer(data = data_dict)
+                        if serializer.is_valid():
+                            serializer.save()
+                            return Response({'data' : data_dict})
+                        else:
+                            serializer_error_dict = dict(serializer.errors)
+                            error_list_for_response = []
+                            for error in serializer_error_dict.keys():
+                                error_list_for_response.append(serializer_error_dict[error][0])
+                            return Response({'error':error_list_for_response})
+                    else:
+                        return Response({'no product in inventory'})
             else:
                 return Response({'access':'denied'})
         else:
@@ -829,19 +829,27 @@ def handle_product_master(request):
     header_info = request.META
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
-            if header_info['HTTP_AUTHORIZATION'] != 0:
-                data_dict = clean_dict_to_serialize(dict(request.data))
-                print(data_dict)
-                serializer = ProductMasterserBusinessializer(data = data_dict)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(data_dict)
+            if header_info['HTTP_AUTHORIZATION'] != '':
+                
+                token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+                
+                token_status , owner_pk = check_jwt_validity(token_from_header)
+                
+                if token_status == False:
+                    return Response({'access':'denied'})
                 else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response =[]
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response})
+                    data_dict = clean_dict_to_serialize(dict(request.data))
+                    print(data_dict)
+                    serializer = ProductMasterserBusinessializer(data = data_dict)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(data_dict)
+                    else:
+                        serializer_error_dict = dict(serializer.errors)
+                        error_list_for_response =[]
+                        for error in serializer_error_dict.keys():
+                            error_list_for_response.append(serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
             else:
                 return Response({'access':'denied'})
         else:
@@ -853,27 +861,35 @@ def add_store_under_business_id(request):
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] !=  '': 
-                data_dict = clean_dict_to_serialize(dict(request.data))
                 
-                #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
-                #heres two way to do the same thing u getting bro?
-                owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
-                if len(owner_of_business_id_from_api) == 0:
-                    return Response({'No business was found'})
+                token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+                
+                token_status , owner_pk = check_jwt_validity(token_from_header)
+                
+                if token_status == False:
+                    return Response({'access':'denied'})
                 else:
-                    data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
-                    data_dict['associated_business'] = data_dict['business']
-                    serializer = StoreSerializer(data = data_dict)
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(data_dict)
+                    data_dict = clean_dict_to_serialize(dict(request.data))
+                    
+                    #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
+                    #heres two way to do the same thing u getting bro?
+                    owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
+                    if len(owner_of_business_id_from_api) == 0:
+                        return Response({'No business was found'})
                     else:
-                        serializer_error_dict = dict(serializer.errors)
-                        error_list_for_response = []
-                        for error in serializer_error_dict.keys():
-                            error_list_for_response.append(
-                            serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
+                        data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
+                        data_dict['associated_business'] = data_dict['business']
+                        serializer = StoreSerializer(data = data_dict)
+                        if serializer.is_valid():
+                            serializer.save()
+                            return Response(data_dict)
+                        else:
+                            serializer_error_dict = dict(serializer.errors)
+                            error_list_for_response = []
+                            for error in serializer_error_dict.keys():
+                                error_list_for_response.append(
+                                serializer_error_dict[error][0])
+                            return Response({'error':error_list_for_response})
             else:
                 return Response({'access':'denied'})
         else:
@@ -895,22 +911,28 @@ def add_product_in_the_store_inventory(request):
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] != '':
                 
-                data_dict = clean_dict_to_serialize(dict(request.data))
+                token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
                 
-                #putting the current date time
-                data_dict['updated_at'] = datetime.now()
-                data_dict['associated_store'] = data_dict['store']
-                
-                product_in_store , name = is_product_available_in_store(data_dict['store'] , data_dict['product'])
-                if product_in_store == True:
-                    return Response({f'Product {name} Already in store'})
+                token_status , owner_pk  = check_jwt_validity(token_from_header)
+                if token_status == False:
+                    return Response({'access':'denied'})
                 else:
-                    business_id_from_product= list(Business.objects.filter(products__pk = data_dict['product']).values('pk'))
-                    if len(business_id_from_product) == 0:
-                        return Response({'No relation found'})
+                    data_dict = clean_dict_to_serialize(dict(request.data))
+                    
+                    #putting the current date time
+                    data_dict['updated_at'] = datetime.now()
+                    data_dict['associated_store'] = data_dict['store']
+                    
+                    product_in_store , name = is_product_available_in_store(data_dict['store'] , data_dict['product'])
+                    if product_in_store == True:
+                        return Response({f'Product {name} Already in store'})
                     else:
-                        data_dict['business'] = business_id_from_product[0]['pk']
-                        serializer = StoreInventorySerializer(data = data_dict)
+                        business_id_from_product= list(Business.objects.filter(products__pk = data_dict['product']).values('pk'))
+                        if len(business_id_from_product) == 0:
+                            return Response({'No relation found'})
+                        else:
+                            data_dict['business'] = business_id_from_product[0]['pk']
+                            serializer = StoreInventorySerializer(data = data_dict)
                         
                         if serializer.is_valid():
                             serializer.save()
@@ -939,8 +961,8 @@ def add_business_employee(request):
         
         if 'HTTP_AUTHORIZATION' not in header_info.keys():
             #if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
-                
             
+                
             data_dict = dict(request.data)
             print(data_dict)
             serializer =  EmployeeSerializer(data=data_dict)
@@ -962,59 +984,72 @@ def add_business_employee(request):
 
 @api_view(['POST'])
 def handle_product_return(request):
+    header_info = request.META
     
-    
-    if request.method == 'POST':
-        
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        pprint(data_dict)
-        search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry' , 'mop'))
-        pprint(search_bill)
-        if len(search_bill) == 0:
-            return Response({'no bill found'})
-        
-        else:
-            products_from_bill_id = search_bill[0]['products']
-            print(']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
-            print(products_from_bill_id)
+    if 'HTTP_AUTHORIZATION' in header_info.keys():
+        if header_info['HTTP_AUTHORIZATION'] != '':
             
-            product_id_list = [ i['product_id'] for i in products_from_bill_id ]
-            print(f' =================================== {product_id_list}')
+            token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
-            if int(data_dict['product']) in product_id_list:
-                found = True
-            else:
-                found = False
+            token_status , owner_pk = check_jwt_validity(token_from_header)
             
-            if found == False:
-                return Response({"Product Not In Bill"})
-
-            #look for customer in a store
-            data_from_sales_register = SalesRegister.objects.filter(bill_ID = data_dict['bill_id'])
-            #data_from_sales_register = model_to_dict(data_from_sales_register[1])
-            for i in range(len(data_from_sales_register)):
-                data = model_to_dict(data_from_sales_register[i])
-                print(data)
+            if token_status == False:
+                return Response({'access':'denied'})
+            if request.method == 'POST':
+            
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                pprint(data_dict)
+                search_bill = list(TransactionDetailsMaster.objects.filter(bill_id = data_dict['bill_id']).values("products" , 'date_of_entry' , 'mop'))
+                pprint(search_bill)
+                if len(search_bill) == 0:
+                    return Response({'no bill found'})
                 
-                return_sales_pending_data_dict = {}
-                return_sales_pending_data_dict['date_of_entry'] = datetime.now()
-                
-                
-                data['date_of_entry'] = datetime.now()
-                if str(data['product']) == data_dict['product']:
-                    data['return_quantity'] = data_dict['return_quantity']
-                    pprint(data)
-                    save_in_sales_pending_table_serializer = ReturnSalesPendingSerializer(data = data)
-                    if save_in_sales_pending_table_serializer.is_valid():
-                        save_in_sales_pending_table_serializer.save()
-                        saving_in_return_sales_pending_success = True
+                else:
+                    products_from_bill_id = search_bill[0]['products']
+                    print(']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
+                    print(products_from_bill_id)
+                    
+                    product_id_list = [ i['product_id'] for i in products_from_bill_id ]
+                    print(f' =================================== {product_id_list}')
+                    
+                    if int(data_dict['product']) in product_id_list:
+                        found = True
                     else:
-                        saving_in_return_sales_pending_success = False
-                        return Response(save_in_sales_pending_table_serializer.errors)   
+                        found = False
+                    
+                    if found == False:
+                        return Response({"Product Not In Bill"})
 
-            #print(data_from_sales_register)
-            
-            return Response({'Holla'})
+                    #look for customer in a store
+                    data_from_sales_register = SalesRegister.objects.filter(bill_ID = data_dict['bill_id'])
+                    #data_from_sales_register = model_to_dict(data_from_sales_register[1])
+                    for i in range(len(data_from_sales_register)):
+                        data = model_to_dict(data_from_sales_register[i])
+                        print(data)
+                        
+                        return_sales_pending_data_dict = {}
+                        return_sales_pending_data_dict['date_of_entry'] = datetime.now()
+                        
+                        
+                        data['date_of_entry'] = datetime.now()
+                        if str(data['product']) == data_dict['product']:
+                            data['return_quantity'] = data_dict['return_quantity']
+                            pprint(data)
+                            save_in_sales_pending_table_serializer = ReturnSalesPendingSerializer(data = data)
+                            if save_in_sales_pending_table_serializer.is_valid():
+                                save_in_sales_pending_table_serializer.save()
+                                saving_in_return_sales_pending_success = True
+                            else:
+                                saving_in_return_sales_pending_success = False
+                                return Response(save_in_sales_pending_table_serializer.errors)   
+
+                    #print(data_from_sales_register)
+                
+                    return Response({'Holla'})
+        else:
+            return Response({'access':'denied'})
+    else:
+        return Response({'access':'denied'})
             
             
 
@@ -1156,6 +1191,11 @@ def handle_supplier(request):
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             token = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
+            token_status , owner_pk = check_jwt_validity(token)
+            
+            if token_status == False:
+                return Response({'access':'denied'})
+            
             data_dict = clean_dict_to_serialize(dict(request.data))
             data_dict['date_of_entry'] = datetime.now()
             
@@ -1178,6 +1218,15 @@ def handle_supplier(request):
 
 @api_view(['POST'])
 def purchase_pending(request):
+    
+    header_info = request.META
+    
+    if 'HTTP_AUTHORIZATION' not in header_info.keys():
+        return Response({'access':'denied'})
+    
+    if header_info['HTTP_AUTHORIZATION'] == '':
+        return Response({'access':'denied'})
+    
     if request.method == 'POST':
         data_dict = clean_dict_to_serialize(dict(request.data))
         pprint(data_dict)
@@ -1204,44 +1253,60 @@ def purchase_pending(request):
 @api_view(['POST'])
 def purchase_register(request):
     
-        if request.method == 'POST':
-            
-            data_dict = clean_dict_to_serialize(dict(request.data))
+    
+    header_info = request.META  
+    
+    if 'HTTP_AUTHORIZATION' not in header_info.keys():
+        return Response({'access':'denied'})
+    
+    if header_info['HTTP_AUTHORIZATION'] == '':
+        return Response({'access':'denied'})  
+
+    if request.method == 'POST':
         
-            data_from_purchase_pending = PurchasePending.objects.filter(store = data_dict['store'] ,  supplier = data_dict['supplier'])
+        data_dict = clean_dict_to_serialize(dict(request.data))
+    
+        data_from_purchase_pending = PurchasePending.objects.filter(store = data_dict['store'] ,  supplier = data_dict['supplier'])
+            
+        if data_from_purchase_pending.exists():
+            
+            
+            data_from_sales_register = PurchaseRegister.objects.filter(store = data_dict['store']).order_by('-bill_id').first()
+            
+            if data_from_sales_register == None:
+                bill_id = 1
+            else:
+                bill_id = int(model_to_dict(data_from_sales_register)['bill_id']) + 1
+            
+            
+            data_list_from_purchase_pending = []
+            for data in data_from_purchase_pending:
+                data = model_to_dict(data)
+                del data['id']
+                data['bill_id'] = bill_id
+                data_list_from_purchase_pending.append(data)
                 
-            if data_from_purchase_pending.exists():
-                
-                
-                data_from_sales_register = PurchaseRegister.objects.filter(store = data_dict['store']).order_by('-bill_id').first()
-                
-                if data_from_sales_register == None:
-                    bill_id = 1
-                else:
-                    bill_id = int(model_to_dict(data_from_sales_register)['bill_id']) + 1
-                
-                
-                data_list_from_purchase_pending = []
-                for data in data_from_purchase_pending:
-                    data = model_to_dict(data)
-                    del data['id']
-                    data['bill_id'] = bill_id
-                    data_list_from_purchase_pending.append(data)
-                    
-                serializer = PurchaseRegisterSerializer(data = data_list_from_purchase_pending , many=True)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({"data":data_list_from_purchase_pending})
-                else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response =[]
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response})  
+            serializer = PurchaseRegisterSerializer(data = data_list_from_purchase_pending , many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"data":data_list_from_purchase_pending})
+            else:
+                serializer_error_dict = dict(serializer.errors)
+                error_list_for_response =[]
+                for error in serializer_error_dict.keys():
+                    error_list_for_response.append(serializer_error_dict[error][0])
+                return Response({'error':error_list_for_response})  
     
 @api_view(['POST'])
 def handle_purchase_transaction(request):
     header_info = request.META
+    
+    if 'HTTP_AUTHORIZATION' not in header_info.keys():
+        return Response({'access':'denied'})
+    
+    if header_info['HTTP_AUTHORIZATION'] == '':
+        return Response({'access':'denied'})
+    
     if request.method == 'POST':
         data_dict = clean_dict_to_serialize(dict(request.data))
         data_dict['date_of_entry'] = datetime.now()
