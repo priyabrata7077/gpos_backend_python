@@ -68,7 +68,19 @@ class JwtAuth(models.Model):
     def __str__(self):
         return f'{self.jwt} jwt ID -> {self.pk}'
 
+class Permission(models.Model):
+    permission = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
 
+    def __str__(self):
+        return f'{self.permission}'
+
+class Roles(models.Model):
+    role = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+    permisssions = models.ManyToManyField(Permission , related_name='roles')
+    def __str__(self):
+        return f'{self.role} - {self.description}'
 
 class EmployeeMaster(models.Model):
     
@@ -78,7 +90,8 @@ class EmployeeMaster(models.Model):
     address = models.CharField(max_length=200 , blank=False)
     adhaar = models.CharField(max_length=12 , blank=False , unique=True)
     business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='employee' , null = True)
-
+    role = models.ForeignKey(Roles , related_name='employee' , on_delete=models.DO_NOTHING , null=True)
+    
     def __str__(self):
         return f' {self.name} -> ID {self.pk} '
 
@@ -265,7 +278,7 @@ class SalesRegister(models.Model):
     #row_total = models.CharField(max_length=100, null =True)
     
     def __str__(self):
-        return f' salesReg_pk -> {self.pk} | {self.bill_ID} - {self.row_total}'
+        return f' salesReg_pk -> {self.pk} | {self.bill_ID} '
 
 
 
@@ -441,19 +454,7 @@ class PurchaseRegister:
 class CategoriesMaster(models.Model):
     name = models.CharField()
 '''
-class Permission(models.Model):
-    permission = models.CharField(max_length=30)
-    description = models.CharField(max_length=100)
 
-    def __str__(self):
-        return f'{self.permission}'
-
-class Roles(models.Model):
-    role = models.CharField(max_length=30)
-    description = models.CharField(max_length=100)
-    permisssions = models.ManyToManyField(Permission , related_name='roles')
-    def __str__(self):
-        return f'{self.role} - {self.description}'
 
 
 
@@ -462,7 +463,14 @@ class RolesHasPermission(models.Model):
     pass
 '''
 
-
+class Categories(models.Model):
+    name = models.CharField(max_length=100)
+    parent = models.CharField(max_length=100 , blank=True)
+    store = models.ForeignKey(storeMaster , related_name='category' , on_delete=models.DO_NOTHING)
+    
+    def __str__(self):
+        return f'Name -> {self.name} | Parent -> {self.parent} | store -> {self.store}'
+    
 
 
 class Daily_employee_management(models.Model):

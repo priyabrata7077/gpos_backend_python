@@ -1263,3 +1263,19 @@ def handle_purchase_transaction(request):
             for error in serializer_error_dict.keys():
                 error_list_for_response.append(serializer_error_dict[error][0])
             return Response({'error':error_list_for_response})
+
+
+
+def handle_stock_change(request):
+    
+    if request.method == 'POST':
+        pass
+
+
+
+
+
+
+
+
+
