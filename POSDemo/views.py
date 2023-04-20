@@ -272,16 +272,24 @@ def handle_business(request):
             print(f'Bro the token from res is {token_from_res}')
             data_dict = dict(request.data)
             
-            if token_from_res == ' ' or token_from_res == "":
-                token_status , owner_pk = check_jwt_validity(token_from_res)
-                if token_status == False:
-                    return Response({'access':'denied'})
-                
-                all_businesses = Owner.objects.filter(pk = owner_pk)
-                if all_businesses.exists():
-                    
-                    return Response()
-              
+            if token_from_res == " " or token_from_res == "":
+                return Response({'access':'denied'})
+            
+            token_status , owner_pk = check_jwt_validity(token_from_res)
+            print(f'Bro the token status is {token_status}')
+            if token_status == False:
+                return Response({'access':'denied'})
+            
+            
+            all_businesses = Business.objects.filter(owner_id=owner_pk)
+            if all_businesses.exists():
+                businesses = [model_to_dict(i) for i in all_businesses]
+                return Response({'data':businesses})
+            else:
+                return Response({'business':'null'})
+       
+        else:
+            return Response({'access':'denied'})
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             
@@ -882,7 +890,7 @@ def add_store_under_business_id(request):
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'] !=  '': 
                 
-                token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+                token_from_header = header_info['HTTP_AUTHORIZATION']
                 
                 token_status , owner_pk = check_jwt_validity(token_from_header)
                 
