@@ -43,24 +43,28 @@ def check_jwt_validity(jwt_from_api):
     
     decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
     #pprint(decoded_jwt)
+    print(decoded_jwt)
     try:
-        if 'owner' in decoded_jwt.keys:
+        if 'owner' in decoded_jwt.keys():
             owner_id = decoded_jwt['owner']
             pass_hash = decoded_jwt['pass']
             
-            check_jwt_in_db = JwtAuth.objects.filter(jwt = decoded_jwt).values('expiry')
-            
+            check_jwt_in_db = JwtAuth.objects.filter(jwt = jwt_from_api).values('expiry')
+            print(check_jwt_in_db)
             if len(check_jwt_in_db) == 0:
                 return False , None
             else:
+                print('||')
                 check_owner = list(Owner.objects.filter(pk = owner_id , password=pass_hash).values('name' , 'pk'))
                 if len(check_owner) == 0:
                     return False , None
                 else:
                     jwt_expiry = check_jwt_in_db[0]['expiry']
-                    if jwt_expiry < datetime.now(tz=timezone.utc):
+                    print(f'|| The jwt expiry is {jwt_expiry}')
+                    if jwt_expiry > datetime.now():
                         return True , check_owner[0]['pk']
                     else:
+                        
                         return False , None
         if 'employee' in decoded_jwt.keys():
             employee_id = decoded_jwt['employee']
@@ -199,28 +203,28 @@ def handle_login(request):
             login_data_dict =dict(login_data)
             print(f'+++++++++++++++++++++ Login Data Bro +++++++++++++++++')
             pprint(login_data_dict)
-            if 'email' in login_data_dict.keys():
-                print(
-                    f'{login_data_dict["email"]} -------- {type(login_data_dict)}')
-                #user_name = login_data_dict['username'][0]
-                email = login_data_dict["email"]
-                passwd = login_data_dict["password"]
-                print(f'{email} ------- {passwd}')
-                data_from_db = list(Owner.objects.filter(email=email , password = hash_pass(passwd)).values('pk' , 'name'))
-                pprint(data_from_db)
-                if len(data_from_db) == 0:
-                    return Response({'No user found'})
-                else:
-                    new_jwt = create_jwt(owner_id = data_from_db[0]['pk'] , hashed_pass= login_data_dict['password'] , employee=False)
-                    jwt_expiry = expiry_time_calc(86400)
-                    
-                    
-                    
-                    #before saving the newly created json web token after login I got
-                    save_jwt = JwtAuth(jwt = new_jwt , expiry = jwt_expiry)
-                    save_jwt.save()
-                    
-                    return Response({'user':data_from_db[0]['pk'] ,'bearer':new_jwt})                    
+           
+            print(
+                f'{login_data_dict["email"]} -------- {type(login_data_dict)}')
+            #user_name = login_data_dict['username'][0]
+            email = login_data_dict["email"]
+            passwd = login_data_dict["password"]
+            print(f'{email} ------- {passwd}')
+            data_from_db = list(Owner.objects.filter(email=email , password = hash_pass(passwd)).values('pk' , 'name'))
+            pprint(data_from_db)
+            if len(data_from_db) == 0:
+                return Response({'No user found'})
+            else:
+                new_jwt = create_jwt(owner_id = data_from_db[0]['pk'] , hashed_pass= hash_pass(login_data_dict["password"]) , employee=False)
+                jwt_expiry = expiry_time_calc(86400)
+                
+                
+                
+                #before saving the newly created json web token after login I got
+                save_jwt = JwtAuth(jwt = new_jwt , expiry = jwt_expiry)
+                save_jwt.save()
+                
+                return Response({'user':data_from_db[0]['pk'] ,'bearer':new_jwt})                    
                     # checking the the user has already been logged in with the token
                     # checking if the user is already in the auth db.
 
@@ -257,47 +261,60 @@ def handle_logout(request):
         
         
        
-@api_view(['GET' , 'POST'])        
+@api_view(['GET' ,'POST'])        
 def handle_business(request):
     
     header_info = request.META
     print(header_info)
     if request.method == 'GET':
-        business_data = Business.objects.all()
-        serializer = BusinessSerializer(business_data, many=True)
-        return Response(serializer.data) 
-    
+        if 'HTTP_AUTHORIZATION' in header_info.keys():
+            token_from_res = header_info['HTTP_AUTHORIZATION']
+            print(f'Bro the token from res is {token_from_res}')
+            data_dict = dict(request.data)
+            
+            if token_from_res == ' ' or token_from_res == "":
+                token_status , owner_pk = check_jwt_validity(token_from_res)
+                if token_status == False:
+                    return Response({'access':'denied'})
+                
+                all_businesses = Owner.objects.filter(pk = owner_pk)
+                if all_businesses.exists():
+                    
+                    return Response()
+              
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
-           
-            token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
             
+            token_from_res = header_info['HTTP_AUTHORIZATION']
+            print(f'Bro the token from res is {token_from_res}')
             data_dict = dict(request.data)           
 
             #print(f'token found from header {token_from_res}')
-            if token_from_res == "":
-                return Response({'access':'denied'})
-            
-            jwt_status , owner_pk = check_jwt_validity(token_from_res)
-            
-            if jwt_status == False:
-                return Response({'access':'denied'})
-            
-            
-            data_dict['date_of_entry'] = datetime.now().date()
-            print(f'primary key of the owner from token {owner_pk} ')
-            data_dict['owner_id'] = owner_pk
-            
-            serializer = BusinessSerializer(data = data_dict)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
+            if token_from_res != " ":
+                jwt_status , owner_pk = check_jwt_validity(token_from_res)
+                print(f'Broooooo The jwt status is {jwt_status}')
+                if jwt_status == False:
+                    return Response({'access':'denied'})
+                
+                else:
+                    data_dict['date_of_entry'] = datetime.now().date()
+                    print(f'primary key of the owner from token {owner_pk} ')
+                    data_dict['owner_id'] = owner_pk
+                    print('||')
+                    pprint(data_dict)
+                    serializer = BusinessSerializer(data = data_dict)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data)
+                    else:
+                        serializer_error_dict = dict(serializer.errors)
+                        error_list_for_response =[]
+                        for error in serializer_error_dict.keys():
+                            error_list_for_response.append(serializer_error_dict[error][0])
+                        return Response({'error':error_list_for_response})
             else:
-                serializer_error_dict = dict(serializer.errors)
-                error_list_for_response =[]
-                for error in serializer_error_dict.keys():
-                    error_list_for_response.append(serializer_error_dict[error][0])
-                return Response({'error':error_list_for_response})
+                return Response({'access':'denied'})
+
         else:
             return Response({'access':'denied'})
 
@@ -309,19 +326,20 @@ def handle_business(request):
 @api_view(['POST' , 'GET'])         
 def handle_owner_details(request):
     header_info = request.META
+    print(header_info)
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            jwt_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+            jwt_from_res = header_info['HTTP_AUTHORIZATION']
             print(f'token found from header {jwt_from_res}')
-            if jwt_from_res == "":
+            if jwt_from_res == " " or jwt_from_res == "":
                 return Response({'access':"denied"})
             token_status , owner_id = check_jwt_validity(jwt_from_res)
             print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||')
             #checking if the token has expired with the help of the custom function check_token_expiry()
             
             if token_status == True:
-                data_dict = clean_dict_to_serialize(dict(request.data))
+                data_dict = dict(request.data)
                 data_dict['owner_id'] = owner_id
                 data_dict['date_of_entry'] = datetime.now().date()
                 serializer = OwnerDetailsSerializer(data = data_dict)
@@ -339,7 +357,9 @@ def handle_owner_details(request):
 
             else:
                 return Response({"access":"denied"})
-                
+        else:
+            
+            return Response({'access':'denied'})        
 
     
     
@@ -409,10 +429,10 @@ def handle_store(request):
         header_info = request.META
         if 'HTTP_AUTHORIZATION' in header_info.keys():
            
-            token_from_res = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
-            if token_from_res == "":
+            token_from_res = header_info['HTTP_AUTHORIZATION']
+            if token_from_res == "" or token_from_res == " ":
                 return Response({'access':'denied'})
-            token_status , owner_pk = check_token_validity(token_from_res)
+            token_status , owner_pk = check_jwt_validity(token_from_res)
             print(f'{token_status} =========== {owner_pk}')
             if token_status == True:
                 data = request.data

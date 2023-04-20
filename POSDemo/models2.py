@@ -31,7 +31,7 @@ class Business(models.Model):
     phone = models.CharField(blank=True , max_length=12)
     address = models.CharField(blank=False , max_length=300)
     city = models.CharField(max_length=20)
-    pin = models.IntegerField()
+    pin = models.CharField(max_length=6)
     state = models.CharField(max_length=20)
     country = models.CharField(max_length=10)
     pan = models.CharField(blank=False , max_length=10 , unique=True)
