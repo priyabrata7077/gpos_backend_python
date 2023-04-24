@@ -358,8 +358,9 @@ class ReturnTransactionDetails(models.Model):
     business = models.ForeignKey(Business , related_name='returntransaction' , on_delete=models.DO_NOTHING)
     store = models.ForeignKey(storeMaster , related_name='returntransaction' , on_delete=models.DO_NOTHING)
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='returntransaction')
-    mop = models.JSONField()
-    products = models.JSONField()
+    mop = models.ForeignKey(ModeOfPayment , related_name='returntransactiondetails' , on_delete=models.DO_NOTHING , null=True)
+    #product = models.ForeignKey(Product , related_name='returntransactiondetails' , on_delete=models.DO_NOTHING , null=True)
+    amount = models.CharField(max_length=100 , null=True)
     #reason = models.CharField(max_length=100 , blank=True , null=True)
     
     def __str__(self):

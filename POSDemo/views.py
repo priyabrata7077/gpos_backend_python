@@ -4,9 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth , PurchasePending , PurchaseRegister
+from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth , PurchasePending , PurchaseRegister , ReturnSalesPending
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer , PurchaseTransactionSerializer
+from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer , PurchaseTransactionSerializer , ReturnTransactionDetailsSerializer , CategoriesSerializer
 
 
 from rest_framework.decorators import api_view
@@ -22,7 +22,7 @@ from dateutil import tz
 from pprint import pprint
 from time import sleep
 import jwt
-from jwt.exceptions import InvalidKeyError
+from jwt.exceptions import InvalidKeyError , DecodeError
 import os
 
 #Custom Helper Functions 
@@ -41,15 +41,16 @@ def clean_dict_to_serialize(data_dict):
 
 def check_jwt_validity(jwt_from_api):
     
-    decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
-    #pprint(decoded_jwt)
-    print(decoded_jwt)
+
     try:
+        decoded_jwt = jwt.decode(jwt_from_api , key = 'password123' , algorithms=['HS256'])
+        #pprint(decoded_jwt)
+        print(decoded_jwt)
         if 'owner' in decoded_jwt.keys():
             owner_id = decoded_jwt['owner']
             pass_hash = decoded_jwt['pass']
             
-            check_jwt_in_db = JwtAuth.objects.filter(jwt = jwt_from_api).values('expiry')
+            check_jwt_in_db = JwtAuth.objects.filter(jwt = jwt_from_api)
             print(check_jwt_in_db)
             if len(check_jwt_in_db) == 0:
                 return False , None
@@ -59,12 +60,13 @@ def check_jwt_validity(jwt_from_api):
                 if len(check_owner) == 0:
                     return False , None
                 else:
-                    jwt_expiry = check_jwt_in_db[0]['expiry']
+                    jwt_expiry = model_to_dict(check_jwt_in_db[0])['expiry']
                     print(f'|| The jwt expiry is {jwt_expiry}')
                     if jwt_expiry > datetime.now():
                         return True , check_owner[0]['pk']
                     else:
-                        
+                        check_jwt_in_db.delete()
+                        print(f'< - the token was expired so It has been deleted bro - > ')
                         return False , None
         if 'employee' in decoded_jwt.keys():
             employee_id = decoded_jwt['employee']
@@ -79,6 +81,8 @@ def check_jwt_validity(jwt_from_api):
                 else:
                     return False , None
     except InvalidKeyError:
+        return False , None
+    except DecodeError:
         return False , None
 
 
@@ -982,6 +986,7 @@ def add_product_in_the_store_inventory(request):
 #Okay I got it I need to hash the password of the during login and signup
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
+
 @api_view(['POST'])
 def add_business_employee(request):
     header_info = request.META
@@ -1017,7 +1022,7 @@ def handle_product_return(request):
     if 'HTTP_AUTHORIZATION' in header_info.keys():
         if header_info['HTTP_AUTHORIZATION'] != '':
             
-            token_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
+            token_from_header = header_info['HTTP_AUTHORIZATION']
             
             token_status , owner_pk = check_jwt_validity(token_from_header)
             
@@ -1080,7 +1085,54 @@ def handle_product_return(request):
         return Response({'access':'denied'})
             
             
+@api_view(['POST'])
+def handle_product_return_transaction(request):
+    
+    header_info = request.META
+    
+    if 'HTTP_AUTHORIZATION' in header_info.keys():
+        if header_info['HTTP_AUTHORIZATION'] != '':
+    
+            if request.method == 'POST':
+                data_dict = clean_dict_to_serialize(dict(request.data))
+                data_from_sales_pending = ReturnSalesPending.objects.filter(bill_ID = int(data_dict['bill_id']) , store = data_dict['store'] , employee = data_dict['employee'] , customer = data_dict['customer'])
+                
+                if data_from_sales_pending.exists():
+                    data_from_sales_pending_dict = model_to_dict(data_from_sales_pending[0])
+                    
+                    data_dict['date_of_entry'] = datetime.now()
+                    data_dict['business'] = data_from_sales_pending_dict['business']
+                    clean_mop = data_dict['mop'][1:-1].split(',')
+                    
+                    
+                    for i in clean_mop:
+                        mop , amount  = i.split(':')
+                        data_dict['mop'] = mop
+                        data_dict['amount'] = amount
+                        print(f'Bro the clean MOP is {clean_mop}')
+                        
+                        pprint(data_dict)
+                        serializer = ReturnTransactionDetailsSerializer(data=data_dict)
+                        
+                        if serializer.is_valid():
+                            serializer.save()
 
+                        else:
+                            serializer_error_dict = dict(serializer.errors)
+                            error_list_for_response =[]
+                            for error in serializer_error_dict.keys():
+                                error_list_for_response.append(serializer_error_dict[error][0])
+                            return Response({'error':error_list_for_response}) 
+                    data_from_sales_pending.delete()
+                    print(f'Data From Sales Pending has been deleted succssfully after putting the data in the transaction details table BRO.')
+                    return Response({'data':data_dict})
+                
+                else:
+                    return Response({'data':'null'})
+        else:
+            return Response({'access':'denied'})
+    else:
+        return Response({'access':'denied'})
 
 def jwt_header_auth(header):
     
@@ -1387,8 +1439,22 @@ def handle_product_categories(request):
 
     if request.method == 'POST':
         data_dict = clean_dict_to_serialize(dict(request.data))
+        if data_dict['parent'] == '':
+            data_dict.pop('parent')
         
-        return Response(data_dict)
+        pprint(data_dict)
+        serializer = CategoriesSerializer(data=data_dict)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data_dict)
+        else:
+            serializer_error_dict = dict(serializer.errors)
+            error_list_for_response =[]
+            for error in serializer_error_dict.keys():
+                error_list_for_response.append(serializer_error_dict[error][0])
+            return Response({'error':error_list_for_response})
+            
 
 
 

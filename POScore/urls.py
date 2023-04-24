@@ -53,6 +53,7 @@ urlpatterns = [
     path('business/employee/add' , views.add_business_employee , name = 'add-employee-in-store'),
     path('business/store/inventory' , views.add_product_in_the_store_inventory, name = 'add-products-in-the-store-inventory'),
     path('business/store/products/return' , views.handle_product_return , name = 'manage-return-from-customer-in-a-store' ),
+    path('business/store/products/return/transaction' , views.handle_product_return_transaction , name = 'manage-return-transaction-customer-in-a-store' ),
     
     path('business/store/employee/signup' , views.handle_employee_signup , name = 'employee-signup' ),
     path('business/store/employee/login' , views.handle_employee_login , name = 'employee-login' ),

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
-from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails
+from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
 
 class OwnerSerializer(serializers.ModelSerializer):
     
@@ -74,6 +74,12 @@ class ReturnSalesPendingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReturnSalesPending
         fields = '__all__'
+
+class ReturnTransactionDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReturnTransactionDetails
+        fields = '__all__'
+
 class EmployeeCredentialSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -102,4 +108,10 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PurchaseTransactionDetails
+        fields = '__all__'
+
+
+class CategoriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categories
         fields = '__all__'
