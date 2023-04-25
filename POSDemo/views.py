@@ -288,6 +288,7 @@ def handle_business(request):
             all_businesses = Business.objects.filter(owner_id=owner_pk)
             if all_businesses.exists():
                 businesses = [model_to_dict(i) for i in all_businesses]
+                pprint(businesses)
                 return Response({'data':businesses})
             else:
                 return Response({'business':'null'})
@@ -641,7 +642,6 @@ def test_decorator(*args, **kwargs):
 '''
 
 @api_view(['POST'])
-
 def handle_sales_register(request):
     header_info = request.META
     #print(header_info)
@@ -1456,7 +1456,28 @@ def handle_product_categories(request):
             return Response({'error':error_list_for_response})
             
 
-
+@api_view(['POST'])
+def handle_mop(request):
+    header_info = request.META
+    
+    
+    if request.method == 'POST':
+        try:
+            data_dict = clean_dict_to_serialize(dict(request.data))
+            
+            business = Business.objects.get(pk = data_dict['business'])
+            pprint(f'The Business with the id found is {model_to_dict(business)}')
+            m = ModeOfPayment(name = data_dict['name'] , business = business)
+            m.save()
+            
+            print(f'Bro Mode of Payment data has been saved yo -> ')
+            
+            return Response({'operation':'success'})
+        except Exception as e:
+            return Response({'error':e})
+        
+        
+        
 
 
 

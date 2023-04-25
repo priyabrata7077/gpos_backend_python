@@ -105,7 +105,6 @@ class PurchasePendingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PurchaseTransactionSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = PurchaseTransactionDetails
         fields = '__all__'

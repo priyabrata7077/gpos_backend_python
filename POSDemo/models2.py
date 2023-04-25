@@ -223,7 +223,7 @@ class InventoryManager(models.Model):
 
 class ModeOfPayment(models.Model):
     name = models.CharField(max_length=20)
-    
+    business = models.ForeignKey(Business , related_name='mop' , on_delete=models.DO_NOTHING , null=True)
     def __str__(self):
         return f'{self.name} -> {self.pk}'
 
