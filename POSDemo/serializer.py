@@ -74,12 +74,10 @@ class ReturnSalesPendingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReturnSalesPending
         fields = '__all__'
-
 class ReturnTransactionDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReturnTransactionDetails
         fields = '__all__'
-
 class EmployeeCredentialSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -90,15 +88,18 @@ class EmployeeAuthSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeAuth
         fields = '__all__'
+
 class SupplierMasterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SupplierMaster
         fields = '__all__'
+
 class PurchaseRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseRegister
         fields = '__all__'
+
 class PurchasePendingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchasePending
