@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-wb8n9ir#j2xktk57r8%s!xpnrgkhiujbqj-g^e=tyvn-0x=qst
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.18' , 'localhost' , '192.168.1.17' , '192.168.1.19']
+ALLOWED_HOSTS = ['192.168.1.18' , '127.0.0.1' , '192.168.1.17' , '192.168.1.19']
 
 
 # Application definition
@@ -32,10 +32,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'POSDemo',
-    'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
-    "debug_toolbar"
+    
 ]
 
 
@@ -47,9 +46,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    
+    
 ]
 
 ROOT_URLCONF = 'POScore.urls'
@@ -70,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'POScore.wsgi.application'
+
 
 
 # Database
@@ -79,10 +78,10 @@ WSGI_APPLICATION = 'POScore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'GPOS', 
-        'USER': 'postgres', 
-        'PASSWORD': 'riddhi',
-        'HOST': '127.0.0.1', 
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'tapu7077',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
