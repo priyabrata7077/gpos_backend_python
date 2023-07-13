@@ -1,4 +1,9 @@
+from rest_framework import status
+from django.http import HttpResponse
 from django.shortcuts import render
+from jwt import DecodeError, InvalidKeyError
+import jwt
+from dateutil import tz
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,6 +24,8 @@ import secrets
 import hashlib
 import json
 from pprint import pprint
+
+from POSDemo import serializer
 
 #Custom Helper Functions 
 ########################################################################
@@ -240,7 +247,7 @@ def handle_login(request):
 @api_view(['POST'])
 def handle_logout(request):
     header_info = request.META
-    if request.method == 'POST':
+    if request.method == 'GET':
         if 'HTTP_AUTHORIZATION' in header_info.keys():
             if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
                 jwt_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
@@ -982,33 +989,34 @@ def add_product_in_the_store_inventory(request):
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
 
-@api_view(['POST'])
+@api_view(['GET', 'POST', 'CATCH', 'PUT'])
 def add_business_employee(request):
     header_info = request.META
     if request.method == 'POST':
-        
         if 'HTTP_AUTHORIZATION' not in header_info.keys():
-            #if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
-            
-                
             data_dict = dict(request.data)
-            print(data_dict)
-            serializer =  EmployeeSerializer(data=data_dict)
+            serializer = EmployeeSerializer(data=data_dict)
             if serializer.is_valid():
                 employee_instance = serializer.save()
                 data_dict['id'] = employee_instance.pk
                 return Response(data_dict)
             else:
                 serializer_error_dict = dict(serializer.errors)
-                error_list_for_response =[]
+                error_list_for_response = []
                 for error in serializer_error_dict.keys():
                     error_list_for_response.append(serializer_error_dict[error][0])
-                return Response({'error':error_list_for_response}) 
-            #else:
-            #    return Response({'access':'denied'})
+                return Response({'error': error_list_for_response})
         else:
-            return Response({'access':'denied'})      
+            return Response({'access': 'denied'})
+    elif request.method == 'GET':
+        queryset = EmployeeMaster.objects.all()
+        serializer = EmployeeSerializer(queryset, many=True)
+        serialized_data = serializer.data
+        return Response(serialized_data, status=status.HTTP_200_OK)
 
+    # Default response for unsupported HTTP methods
+    
+   
 
 @api_view(['POST'])
 def handle_product_return(request):

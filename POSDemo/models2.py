@@ -25,7 +25,7 @@ class OwnerDetails(models.Model):
     
 class Business(models.Model):
     
-    owner_id = models.ForeignKey(Owner , related_name='business' , blank=False , null=True , on_delete=models.DO_NOTHING)
+    owner_id = models.ForeignKey(Owner , related_name='business' , blank=False , on_delete=models.DO_NOTHING)
     name = models.CharField(max_length=50 , blank=False)
     email = models.EmailField(blank=True)
     phone = models.CharField(blank=True , max_length=12)
@@ -84,16 +84,16 @@ class Roles(models.Model):
 
 class EmployeeMaster(models.Model):
     
-    name = models.CharField(max_length=100 , blank=False)
-    phone = models.CharField(max_length=10 , blank=False , unique=True)
-    email = models.EmailField(blank=True)
-    address = models.CharField(max_length=200 , blank=False)
-    adhaar = models.CharField(max_length=12 , blank=False , unique=True)
-    business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='employee' , null = True)
-    role = models.ForeignKey(Roles , related_name='employee' , on_delete=models.DO_NOTHING , null=True)
+    name = models.CharField(max_length=100 , )
+    email = models.EmailField()
+    phone = models.CharField(max_length=10 ,unique=True)
+    address = models.CharField(max_length=200 , )
+    adhaar = models.CharField(max_length=12 , unique=True)
+    #business = models.ForeignKey(Business , on_delete=models.DO_NOTHING , related_name='employee')
+   
     
     def __str__(self):
-        return f' {self.name} -> ID {self.pk} '
+        return self.name
 
 
 class EmployeeCredential(models.Model):
