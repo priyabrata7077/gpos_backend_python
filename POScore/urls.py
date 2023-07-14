@@ -1,6 +1,6 @@
 
 from django.contrib import admin
-from django.urls import path , include
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from POSDemo import views
 
@@ -50,6 +50,7 @@ urlpatterns = [
     #paths for adding elements in a store under a business
     
     path('business/store/supplier/add' , views.handle_supplier , name = 'add-aupplier'),
+    path('business/employee/add/<int:employee_id>/', views.add_business_employee, name='add-employee-in-store'),
     path('business/employee/add' , views.add_business_employee , name = 'add-employee-in-store'),
     path('business/store/inventory' , views.add_product_in_the_store_inventory, name = 'add-products-in-the-store-inventory'),
     path('business/store/products/return' , views.handle_product_return , name = 'manage-return-from-customer-in-a-store' ),

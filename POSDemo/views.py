@@ -1,5 +1,5 @@
 from rest_framework import status
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from jwt import DecodeError, InvalidKeyError
 import jwt
@@ -9,9 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
-from .models2 import Owner, Business, auth , storeMaster, BusinessInventoryMaster , Customer , Product ,TaxMaster , GenBill , SalesPending , storeInventoryMaster , JwtAuth, TransactionDetailsMaster , ModeOfPayment , SalesRegister , EmployeeMaster , EmployeeCredential , EmployeeAuth , PurchasePending , PurchaseRegister , ReturnSalesPending
+from .models2 import *
 
-from .serializer import OwnerSerializer, BusinessSerializer , StoreSerializer , BusinessInventorySerializer , StoreInventorySerializer , OwnerDetailsSerializer , ProductDataSerializer , SalesPendingSerializer , GenerateBillSerializer , SalesRegisterSerializer , ProductMasterserBusinessializer , CustomerSerializer , EmployeeSerializer , TransactionDetailsSerializer , ReturnSalesPendingSerializer , ReturnSalesPendingSerializer , EmployeeCredentialSerializer , EmployeeAuthSerializer , SupplierMasterSerializer , PurchaseRegisterSerializer , PurchasePendingSerializer , PurchaseTransactionSerializer , ReturnTransactionDetailsSerializer , CategoriesSerializer
+from .serializer import *
 
 
 from rest_framework.decorators import api_view
@@ -989,8 +989,8 @@ def add_product_in_the_store_inventory(request):
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
 
-@api_view(['GET', 'POST', 'CATCH', 'PUT'])
-def add_business_employee(request):
+@api_view(['GET', 'POST', 'CATCH', 'PUT', 'DELETE'])
+def add_business_employee(request, employee_id=None):
     header_info = request.META
     if request.method == 'POST':
         if 'HTTP_AUTHORIZATION' not in header_info.keys():
@@ -1013,10 +1013,27 @@ def add_business_employee(request):
         serializer = EmployeeSerializer(queryset, many=True)
         serialized_data = serializer.data
         return Response(serialized_data, status=status.HTTP_200_OK)
+    elif request.method == 'PUT':
+        try:
+            employee = EmployeeMaster.objects.get(id=employee_id)
+            serializer = EmployeeSerializer(employee, data=request.data)
+            if serializer.is_valid():
+                employee = serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response(serializer.errors, status=400)
+        except EmployeeMaster.DoesNotExist:
+            return Response({"error": "Employee not found."}, status=404)
+    elif request.method == 'DELETE':
+        try:
+            employee = EmployeeMaster.objects.delete(id=employee_id)
+            employee.delete()
+            return Response({"message": "Employee deleted successfully."})
+        except EmployeeMaster.DoesNotExist:
+            return Response({"error": "Employee not found."}, status=404)
 
     # Default response for unsupported HTTP methods
-    
-   
+
 
 @api_view(['POST'])
 def handle_product_return(request):
