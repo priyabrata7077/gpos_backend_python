@@ -545,45 +545,27 @@ def get_all_stores_from_business_id(request):
 
 
 #--------------------------------------------------------FOR SALES PAGE , ITS WITHOUT TOKEN AUTHENTICATION FOR NOW ---------------------------------            
-@api_view(['POST' , 'GET'])
+@api_view(['GET', 'POST'])
 def handle_customer_details(request):
-    
     if request.method == 'GET':
-        data = request.data
-        data_dict =clean_dict_to_serialize(dict(data))
-        
-        if 'name' in data_dict.keys() or 'contact' in data_dict.keys():
-            
-            
-            if 'contact' != '':
-                customer = list(Customer.objects.filter( store__pk = data_dict['store'] ,  contact = data_dict['contact']).values('name' , 'address'))
-                
-                if len(customer) != 0:
-                    name = customer[0]['name']
-                    address = customer[0]['address']
-                    return Response({'name': name , 'address': address})
-                else:
-                    return Response({'customer':'None'})
-            else:
-                return Response({'invalid':'input'})
+        # Handle the GET request to retrieve customer details based on name or contact
+        name = request.GET.get('name')
+        contact = request.GET.get('contact')
+        if name or contact:
+            queryset = Customer.objects.filter(name=name) if name else Customer.objects.filter(contact=contact)
+            serializer = CustomerSerializer(queryset, many=True)
+            return Response(serializer.data)
         else:
-            return Response({'invalid':'input'})
+            return Response({'error': 'Invalid input'})
 
-    if request.method == 'POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        if data_dict['address'] == '':
-            data_dict['address'] = list(storeMaster.objects.filter(pk=1).values('associated_business__address'))[0]['associated_business__address']
-        serializer = CustomerSerializer(data = data_dict)
+    elif request.method == 'POST':
+        # Handle the POST request to create a new customer
+        serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
             customer_instance = serializer.save()
-            return Response({f'{customer_instance.pk}':'added'})
+            return Response({'success': f'Customer added with ID {customer_instance.pk}'})
         else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})         
-            
+            return Response(serializer.errors, status=400)
 
 
 
@@ -989,51 +971,106 @@ def add_product_in_the_store_inventory(request):
 #and store it in the auth table , and then I need to create a jwt json web token which I will return to the front end and it will be stored in the browser cookies and I will get it in each subsequent request for validation.
       
 
-@api_view(['GET', 'POST', 'CATCH', 'PUT', 'DELETE'])
-def add_business_employee(request, employee_id=None):
-    header_info = request.META
-    if request.method == 'POST':
-        if 'HTTP_AUTHORIZATION' not in header_info.keys():
-            data_dict = dict(request.data)
-            serializer = EmployeeSerializer(data=data_dict)
-            if serializer.is_valid():
-                employee_instance = serializer.save()
-                data_dict['id'] = employee_instance.pk
-                return Response(data_dict)
-            else:
-                serializer_error_dict = dict(serializer.errors)
-                error_list_for_response = []
-                for error in serializer_error_dict.keys():
-                    error_list_for_response.append(serializer_error_dict[error][0])
-                return Response({'error': error_list_for_response})
-        else:
-            return Response({'access': 'denied'})
-    elif request.method == 'GET':
-        queryset = EmployeeMaster.objects.all()
-        serializer = EmployeeSerializer(queryset, many=True)
-        serialized_data = serializer.data
-        return Response(serialized_data, status=status.HTTP_200_OK)
-    elif request.method == 'PUT':
-        try:
-            employee = EmployeeMaster.objects.get(id=employee_id)
-            serializer = EmployeeSerializer(employee, data=request.data)
-            if serializer.is_valid():
-                employee = serializer.save()
-                return Response(serializer.data)
-            else:
-                return Response(serializer.errors, status=400)
-        except EmployeeMaster.DoesNotExist:
-            return Response({"error": "Employee not found."}, status=404)
-    elif request.method == 'DELETE':
-        try:
-            employee = EmployeeMaster.objects.delete(id=employee_id)
-            employee.delete()
-            return Response({"message": "Employee deleted successfully."})
-        except EmployeeMaster.DoesNotExist:
-            return Response({"error": "Employee not found."}, status=404)
+# @api_view(['GET', 'POST', 'CATCH', 'PUT', 'DELETE'])
+# def add_business_employee(request, employee_id=None):
+#     header_info = request.META
+#     if request.method == 'POST':
+#         if 'HTTP_AUTHORIZATION' not in header_info.keys():
+#             data_dict = dict(request.data)
+#             serializer = EmployeeSerializer(data=data_dict)
+#             if serializer.is_valid():
+#                 employee_instance = serializer.save()
+#                 data_dict['id'] = employee_instance.pk
+#                 return Response(data_dict)
+#             else:
+#                 serializer_error_dict = dict(serializer.errors)
+#                 error_list_for_response = []
+#                 for error in serializer_error_dict.keys():
+#                     error_list_for_response.append(serializer_error_dict[error][0])
+#                 return Response({'error': error_list_for_response})
+#         else:
+#             return Response({'access': 'denied'})
+#     elif request.method == 'GET':
+#         queryset = EmployeeMaster.objects.all()
+#         serializer = EmployeeSerializer(queryset, many=True)
+#         serialized_data = serializer.data
+#         return Response(serialized_data, status=status.HTTP_200_OK)
+#     elif request.method == 'PUT':
+#         try:
+#             employee = EmployeeMaster.objects.get(id=employee_id)
+#             serializer = EmployeeSerializer(employee, data=request.data)
+#             if serializer.is_valid():
+#                 employee = serializer.save()
+#                 return Response(serializer.data)
+#             else:
+#                 return Response(serializer.errors, status=400)
+#         except EmployeeMaster.DoesNotExist:
+#             return Response({"error": "Employee not found."}, status=404)
+#     elif request.method == 'DELETE':
+#         try:
+#             employee = EmployeeMaster.objects.delete(id=employee_id)
+#             employee.delete()
+#             return Response({"message": "Employee deleted successfully."})
+#         except EmployeeMaster.DoesNotExist:
+#             return Response({"error": "Employee not found."}, status=404)
 
     # Default response for unsupported HTTP methods
+class add_business_employee(APIView):
+    def get(self,request):
+        detailsObj=EmployeeMaster.objects.all()
+        dlSerializeObj=EmployeeSerializer(detailsObj,many=True)
+        return Response(dlSerializeObj.data)
+    
+    def post(self,request):
+        serializeobj=EmployeeSerializer(data=request.data)
+        if serializeobj.is_valid():
+            serializeobj.save()
+            return Response(200)
+        return Response(serializeobj.errors)
 
+
+class UpdateBusinessEmployee(APIView):
+    def get(self, request, pk):
+        try:
+            detailObj = EmployeeMaster.objects.get(pk=pk)
+        except EmployeeMaster.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EmployeeSerializer(detailObj)
+        return Response(serializer.data)
+
+    def put(self, request, pk):  # Adding the PUT method
+        try:
+            detailObj = EmployeeMaster.objects.get(pk=pk)
+        except EmployeeMaster.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EmployeeSerializer(detailObj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Employee updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, pk):
+        try:
+            detailObj = EmployeeMaster.objects.get(pk=pk)
+        except EmployeeMaster.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EmployeeSerializer(detailObj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Employee updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class delete_business_employee(APIView):
+    def get(self,request,pk):
+        try:
+            detailObj=EmployeeMaster.objects.get(pk=pk)
+        except:
+            return Response("Not Found in Database")
+        detailObj.delete()
+        return Response(200)
 
 @api_view(['POST'])
 def handle_product_return(request):
