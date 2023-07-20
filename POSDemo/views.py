@@ -265,73 +265,120 @@ def handle_logout(request):
         else:
             return Response({'access':'denied'})
         
-        
+class handle_business(APIView):
+    def get(self,request):
+        detailsObj=Business.objects.all()
+        dlSerializeObj=BusinessSerializer(detailsObj,many=True)
+        return Response(dlSerializeObj.data)
+class update_handle_business(APIView):
+    def get(self, request, pk):
+        try:
+            detailObj = Business.objects.get(pk=pk)
+        except Business.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BusinessSerializer(detailObj)
+        return Response(serializer.data)
+
+    def put(self, request, pk):  # Adding the PUT method
+        try:
+            detailObj = Business.objects.get(pk=pk)
+        except Business.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BusinessSerializer(detailObj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Employee updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, pk):
+        try:
+            detailObj = Business.objects.get(pk=pk)
+        except Business.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BusinessSerializer(detailObj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Employee updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class delete_business_employee(APIView):
+    def get(self,request,pk):
+        try:
+            detailObj=Business.objects.get(pk=pk)
+        except:
+            return Response("Not Found in Database")
+        detailObj.delete()
+        return Response(200)
+# @api_view(['GET', 'POST', 'PUT', 'DELETE'])        
        
-@api_view(['GET' ,'POST'])        
-def handle_business(request):
+# @api_view(['GET' ,'POST'])        
+# def handle_business(request):
     
-    header_info = request.META
-    print(header_info)
-    if request.method == 'GET':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-            token_from_res = header_info['HTTP_AUTHORIZATION']
-            print(f'Bro the token from res is {token_from_res}')
-            data_dict = dict(request.data)
+#     header_info = request.META
+#     print(header_info)
+#     if request.method == 'GET':
+#         if 'HTTP_AUTHORIZATION' in header_info.keys():
+#             token_from_res = header_info['HTTP_AUTHORIZATION']
+#             print(f'Bro the token from res is {token_from_res}')
+#             data_dict = dict(request.data)
             
-            if token_from_res == " " or token_from_res == "":
-                return Response({'access':'denied'})
+#             if token_from_res == " " or token_from_res == "":
+#                 return Response({'access':'denied'})
             
-            token_status , owner_pk = check_jwt_validity(token_from_res)
-            print(f'Bro the token status is {token_status}')
-            if token_status == False:
-                return Response({'access':'denied'})
+#             token_status , owner_pk = check_jwt_validity(token_from_res)
+#             print(f'Bro the token status is {token_status}')
+#             if token_status == False:
+#                 return Response({'access':'denied'})
             
             
-            all_businesses = Business.objects.filter(owner_id=owner_pk)
-            if all_businesses.exists():
-                businesses = [model_to_dict(i) for i in all_businesses]
-                pprint(businesses)
-                return Response({'data':businesses})
-            else:
-                return Response({'business':'null'})
+#             all_businesses = Business.objects.filter(owner_id=owner_pk)
+#             if all_businesses.exists():
+#                 businesses = [model_to_dict(i) for i in all_businesses]
+#                 pprint(businesses)
+#                 return Response({'data':businesses})
+#             else:
+#                 return Response({'business':'null'})
        
-        else:
-            return Response({'access':'denied'})
-    if request.method == 'POST':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
+#         else:
+#             return Response({'access':'denied'})
+#     if request.method == 'POST':
+#         if 'HTTP_AUTHORIZATION' in header_info.keys():
             
-            token_from_res = header_info['HTTP_AUTHORIZATION']
-            print(f'Bro the token from res is {token_from_res}')
-            data_dict = dict(request.data)           
+#             token_from_res = header_info['HTTP_AUTHORIZATION']
+#             print(f'Bro the token from res is {token_from_res}')
+#             data_dict = dict(request.data)           
 
-            #print(f'token found from header {token_from_res}')
-            if token_from_res != " ":
-                jwt_status , owner_pk = check_jwt_validity(token_from_res)
-                print(f'Broooooo The jwt status is {jwt_status}')
-                if jwt_status == False:
-                    return Response({'access':'denied'})
+#             #print(f'token found from header {token_from_res}')
+#             if token_from_res != " ":
+#                 jwt_status , owner_pk = check_jwt_validity(token_from_res)
+#                 print(f'Broooooo The jwt status is {jwt_status}')
+#                 if jwt_status == False:
+#                     return Response({'access':'denied'})
                 
-                else:
-                    data_dict['date_of_entry'] = datetime.now().date()
-                    print(f'primary key of the owner from token {owner_pk} ')
-                    data_dict['owner_id'] = owner_pk
-                    print('||')
-                    pprint(data_dict)
-                    serializer = BusinessSerializer(data = data_dict)
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        serializer_error_dict = dict(serializer.errors)
-                        error_list_for_response =[]
-                        for error in serializer_error_dict.keys():
-                            error_list_for_response.append(serializer_error_dict[error][0])
-                        return Response({'error':error_list_for_response})
-            else:
-                return Response({'access':'denied'})
+#                 else:
+#                     data_dict['date_of_entry'] = datetime.now().date()
+#                     print(f'primary key of the owner from token {owner_pk} ')
+#                     data_dict['owner_id'] = owner_pk
+#                     print('||')
+#                     pprint(data_dict)
+#                     serializer = BusinessSerializer(data = data_dict)
+#                     if serializer.is_valid():
+#                         serializer.save()
+#                         return Response(serializer.data)
+#                     else:
+#                         serializer_error_dict = dict(serializer.errors)
+#                         error_list_for_response =[]
+#                         for error in serializer_error_dict.keys():
+#                             error_list_for_response.append(serializer_error_dict[error][0])
+#                         return Response({'error':error_list_for_response})
+#             else:
+#                 return Response({'access':'denied'})
 
-        else:
-            return Response({'access':'denied'})
+#         else:
+#             return Response({'access':'denied'})
 
          
          
@@ -556,17 +603,16 @@ def handle_customer_details(request):
             serializer = CustomerSerializer(queryset, many=True)
             return Response(serializer.data)
         else:
-            return Response({'error': 'Invalid input'})
+            return Response({'error': 'Invalid input'}, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'POST':
         # Handle the POST request to create a new customer
         serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
-            customer_instance = serializer.save()
-            return Response({'success': f'Customer added with ID {customer_instance.pk}'})
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors, status=400)
-
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -871,52 +917,74 @@ def handle_product_master(request):
         else:
             return Response({'access':'denied'})
     
-@api_view(['POST'])
-def add_store_under_business_id(request):
-    header_info = request.META
-    if request.method == 'POST':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-            if header_info['HTTP_AUTHORIZATION'] !=  '': 
-                
-                token_from_header = header_info['HTTP_AUTHORIZATION']
-                
-                token_status , owner_pk = check_jwt_validity(token_from_header)
-                
-                if token_status == False:
-                    return Response({'access':'denied'})
-                else:
-                    data_dict = clean_dict_to_serialize(dict(request.data))
-                    
-                    #owner_of_business_id_from_api = list(Business.objects.filter(pk = data_dict['business']).values('owner_id'))
-                    #heres two way to do the same thing u getting bro?
-                    owner_of_business_id_from_api = list(Owner.objects.filter(business__pk = data_dict['business']).values('pk')) #using reverse relation
-                    if len(owner_of_business_id_from_api) == 0:
-                        return Response({'No business was found'})
-                    else:
-                        data_dict['associated_owner'] = owner_of_business_id_from_api[0]['pk']
-                        data_dict['associated_business'] = data_dict['business']
-                        serializer = StoreSerializer(data = data_dict)
-                        if serializer.is_valid():
-                            serializer.save()
-                            return Response(data_dict)
-                        else:
-                            serializer_error_dict = dict(serializer.errors)
-                            error_list_for_response = []
-                            for error in serializer_error_dict.keys():
-                                error_list_for_response.append(
-                                serializer_error_dict[error][0])
-                            return Response({'error':error_list_for_response})
-            else:
-                return Response({'access':'denied'})
-        else:
-            return Response({'access':'denied'})
+class add_store_under_business_id(APIView):
+    def get(self,request):
+        detailsObj=storeMaster.objects.all()
+        dlSerializeObj=StoreSerializer(detailsObj,many=True)
+        return Response(dlSerializeObj.data)
+    
+# @api_view(['GET', 'POST', 'PUT', 'DELETE'])
+# def add_store_under_business_id(request, business_id):
+#     header_info = request.META
 
-def is_product_available_in_store(store_id , product_id):
-    data = list(storeInventoryMaster.objects.filter(associated_store = store_id , product = product_id).values('pk' , 'product__name'))
-    if len(data) == 0:
-        return False , None
-    else:
-        return True , data[0]['product__name']
+#     if request.method == 'POST':
+#         # Handle the POST request to create a new store
+#         if 'HTTP_AUTHORIZATION' in header_info:
+#             token_from_header = header_info['HTTP_AUTHORIZATION']
+#             if token_from_header:
+#                 token_status, owner_pk = check_jwt_validity(token_from_header)
+#                 if not token_status:
+#                     return Response({'access': 'denied'})
+
+#                 data_dict = clean_dict_to_serialize(dict(request.data))
+#                 data_dict['associated_owner'] = owner_pk
+#                 data_dict['associated_business'] = business_id
+
+#                 serializer = StoreSerializer(data=data_dict)
+#                 if serializer.is_valid():
+#                     serializer.save()
+#                     return Response(serializer.data)
+#                 else:
+#                     return Response(serializer.errors, status=400)
+#             else:
+#                 return Response({'access': 'denied'})
+#         else:
+#             return Response({'access': 'denied'})
+
+#     elif request.method == 'GET':
+#         # Handle the GET request to retrieve all stores under a business
+#         stores = storeMaster.objects.filter(associated_business=business_id)
+#         serializer = StoreSerializer(stores, many=True)
+#         return Response(serializer.data)
+
+#     elif request.method == 'PUT':
+#         # Handle the PUT request to update a store under a business
+#         try:
+#             store = storeMaster.objects.get(pk=business_id)
+#         except storeMaster.DoesNotExist:
+#             return Response({'error': 'Store not found'}, status=404)
+
+#         data_dict = clean_dict_to_serialize(dict(request.data))
+#         data_dict['associated_business'] = business_id
+
+#         serializer = StoreSerializer(store, data=data_dict)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             return Response(serializer.errors, status=400)
+
+#     elif request.method == 'DELETE':
+#         # Handle the DELETE request to delete a store under a business
+#         try:
+#             store = storeMaster.objects.get(pk=business_id)
+#         except storeMaster.DoesNotExist:
+#             return Response({'error': 'Store not found'}, status=404)
+
+#         store.delete()
+#         return Response({'success': 'Store deleted successfully'})
+
+#     return Response({'error': 'Invalid request'})
     
 
 @api_view(['POST'])

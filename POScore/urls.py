@@ -24,9 +24,11 @@ urlpatterns = [
     path('logout' , views.handle_logout , name='logout'  ),
     
     
-    path('add-business' , views.handle_business , name='add-business' ),
+    path('add-business' , views.handle_business.as_view() , name='add-business' ),
+    path('add-business/update/<int:pk>' , views.update_handle_business.as_view() , name='update-business' ),
     path('add-owner' , views.handle_owner , name = 'add-owner' ),
     path('add-store' , views.handle_store , name = 'add-store'),
+    path('business/store/add/<int:business_id>/', views.add_store_under_business_id.as_view(), name='add_store_under_business'),
     
     #paths not to be given importance ri8 now
     path('business-inventory' , views.handle_business_inventory , name = 'business-inventory-management' ),
@@ -42,7 +44,7 @@ urlpatterns = [
     path('generate-bill' , views.handle_sales_register , name = 'generate-bill-and-handle-sales-register'),
     path( 'transaction-details' , views.handle_transaction_details , name = 'handle-transaction-details' ),
     path('business/store/get' , views.get_all_stores_from_business_id , name='all-stores-under-the-business-id'),
-    path('business/store/add' , views.add_store_under_business_id , name='all-stores-under-the-business-id'),
+    path('business/store/add' , views.add_store_under_business_id.as_view() , name='all-stores-under-the-business-id'),
     
     #paths for the master inputs
     path('business/product-master' , views.handle_product_master , name = 'add-product-in-business' ),
