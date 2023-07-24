@@ -270,6 +270,14 @@ class handle_business(APIView):
         detailsObj=Business.objects.all()
         dlSerializeObj=BusinessSerializer(detailsObj,many=True)
         return Response(dlSerializeObj.data)
+    def post(self, request):
+        serializer = BusinessSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Print errors for debugging purposes
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class update_handle_business(APIView):
     def get(self, request, pk):
         try:
@@ -484,41 +492,19 @@ def handle_owner(request):
             return Response({'access':'denied'})
 
 
-@api_view(['POST'])
-def handle_store(request):
+class handle_store(APIView):
+    def get(self, request):
+        # Handle GET request to fetch store data
+        stores = storeMaster.objects.all()
+        serializer = StoreSerializer(stores, many=True)
+        return Response(serializer.data)
 
-    if request.method == 'POST':
-        header_info = request.META
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-           
-            token_from_res = header_info['HTTP_AUTHORIZATION']
-            if token_from_res == "" or token_from_res == " ":
-                return Response({'access':'denied'})
-            token_status , owner_pk = check_jwt_validity(token_from_res)
-            print(f'{token_status} =========== {owner_pk}')
-            if token_status == True:
-                data = request.data
-                data_dict = clean_dict_to_serialize(dict(data))
-                data_dict['associated_owner'] = owner_pk
-                print(data_dict)
-                #data_dict['associated_business'] = list(associated_business_id)
-                serializer = StoreSerializer(data = data_dict)
-                
-                
-                if serializer.is_valid() == True:
-                    print(data)
-                    serializer.save()
-                    return Response({'user':'valid' , 'store-data-addition':'success'})
-                else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response = []
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response})
-            if token_status == False:
-                return Response({'token':'invalid'})
-        else:
-            return Response({'access':'denied'})
+    def post(self,request):
+        serializer = StoreSerializer(storeMaster, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(200)
+        return Response(serializer.errors)
 
 @api_view(['POST'])
 def handle_business_inventory(request):
@@ -595,24 +581,16 @@ def get_all_stores_from_business_id(request):
 @api_view(['GET', 'POST'])
 def handle_customer_details(request):
     if request.method == 'GET':
-        # Handle the GET request to retrieve customer details based on name or contact
-        name = request.GET.get('name')
-        contact = request.GET.get('contact')
-        if name or contact:
-            queryset = Customer.objects.filter(name=name) if name else Customer.objects.filter(contact=contact)
-            serializer = CustomerSerializer(queryset, many=True)
-            return Response(serializer.data)
-        else:
-            return Response({'error': 'Invalid input'}, status=status.HTTP_400_BAD_REQUEST)
+        customers = Customer.objects.all()
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     elif request.method == 'POST':
-        # Handle the POST request to create a new customer
         serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

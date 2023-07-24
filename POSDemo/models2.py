@@ -119,7 +119,7 @@ class EmployeeAuth(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=100 , blank=False)
     contact = models.CharField(max_length=10 , unique=True , blank=False) 
-    address = models.CharField(max_length=200 , blank=False , null=True)
+    address = models.CharField(max_length=200 , blank=False )
     store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
     
     def __str__(self):

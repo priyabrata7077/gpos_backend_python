@@ -27,7 +27,7 @@ urlpatterns = [
     path('add-business' , views.handle_business.as_view() , name='add-business' ),
     path('add-business/update/<int:pk>' , views.update_handle_business.as_view() , name='update-business' ),
     path('add-owner' , views.handle_owner , name = 'add-owner' ),
-    path('add-store' , views.handle_store , name = 'add-store'),
+    path('add-store' , views.handle_store.as_view() , name = 'add-store'),
     path('business/store/add/<int:business_id>/', views.add_store_under_business_id.as_view(), name='add_store_under_business'),
     
     #paths not to be given importance ri8 now
