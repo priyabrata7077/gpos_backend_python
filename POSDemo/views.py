@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from jwt import DecodeError, InvalidKeyError
 import jwt
+from rest_framework.decorators import api_view, permission_classes
 from dateutil import tz
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -10,10 +11,10 @@ from rest_framework.response import Response
 from django.forms.models import model_to_dict
 #from .models import SubCategory, ProductInventoryManagement, Customer
 from .models2 import *
-
+from rest_framework.permissions import AllowAny
 from .serializer import *
-
-
+from django.contrib.auth import login, logout, authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from pprint import pprint
@@ -195,76 +196,45 @@ def convert_time_to_ist(datetimeObj):
 #################################################################################################
 
 # token data in header 'HTTP_AUTHORIZATION': 'Bearer oEYOaVC955Onygsp3jjNmNQ8NTFUEDcv'
-@api_view(['GET', 'POST'])
-def handle_login(request):
-        header_info = request.META
-        ip_of_host_from_header = header_info['REMOTE_ADDR']
-        #print(f'{header_info} -------- {type(header_info)}')
-        print('-------------------------------------------------------------------')
-        
-        if request.method == 'POST':
-        
-
-            login_data = request.data
-            login_data_dict =dict(login_data)
-            print(f'+++++++++++++++++++++ Login Data Bro +++++++++++++++++')
-            pprint(login_data_dict)
-           
-            print(
-                f'{login_data_dict["email"]} -------- {type(login_data_dict)}')
-            #user_name = login_data_dict['username'][0]
-            email = login_data_dict["email"]
-            passwd = login_data_dict["password"]
-            print(f'{email} ------- {passwd}')
-            data_from_db = list(Owner.objects.filter(email=email , password = hash_pass(passwd)).values('pk' , 'name'))
-            pprint(data_from_db)
-            if len(data_from_db) == 0:
-                return Response({'No user found'})
-            else:
-                new_jwt = create_jwt(owner_id = data_from_db[0]['pk'] , hashed_pass= hash_pass(login_data_dict["password"]) , employee=False)
-                jwt_expiry = expiry_time_calc(86400)
-                
-                
-                
-                #before saving the newly created json web token after login I got
-                save_jwt = JwtAuth(jwt = new_jwt , expiry = jwt_expiry)
-                save_jwt.save()
-                
-                return Response({'user':data_from_db[0]['pk'] ,'bearer':new_jwt})                    
-                    # checking the the user has already been logged in with the token
-                    # checking if the user is already in the auth db.
-
-'''            
-            if 'token' in login_data_dict.keys():
-                checK_token = auth.objects.filter(token = login_data_dict['token'][0]).values('user_name')
-                if len(checK_token) == 0:
-                    return Response({'invalid token'})
-                else:
-                    user_of_token = list(checK_token)[0]['user_name']
-                    return Response({'token' : 'valid' , 'user': user_of_token })
-'''                
-
 @api_view(['POST'])
-def handle_logout(request):
-    header_info = request.META
-    if request.method == 'GET':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-            if header_info['HTTP_AUTHORIZATION'].split(' ')[0] == 'bearer' and header_info['HTTP_AUTHORIZATION'].split(' ')[1] != '':
-                jwt_from_header = header_info['HTTP_AUTHORIZATION'].split(' ')[1]
-                
-                #checking if its in jwtauth table
-                jwt_exists = list(JwtAuth.objects.filter(jwt = jwt_from_header))
-                if len(jwt_exists) == 0:
-                    return Response({"access":"denied"})
-                else:
-                    jwt_exists[0].delete()
-                    print(f'JWT {jwt_from_header} removed successfully on user logout ')
-                    return Response({'logout':'success'})
-            else:
-                return Response({'access':'denied'})
-        else:
-            return Response({'access':'denied'})
+@permission_classes([AllowAny])
+def login_view(request):
+    # Deserialize the request data using the LoginSerializer
+    serializer = LoginSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        # Get the validated username and password from the serializer
+        username = serializer.validated_data.get('username')
+        password = serializer.validated_data.get('password')
         
+        # Authenticate the user
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            # Log the user in
+            login(request, user)
+            
+            # Return a success response
+            return Response({'detail': 'Login successful'}, status=status.HTTP_200_OK)
+        else:
+            # Return an error response for invalid credentials
+            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        # Return an error response with specific error messages
+        return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+def logout_view(request):
+    logout(request)
+    return Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_view(request):
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        return Response({'detail': 'Registration successful'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
 class handle_business(APIView):
     def get(self,request):
         detailsObj=Business.objects.all()
@@ -500,11 +470,10 @@ class handle_store(APIView):
         return Response(serializer.data)
 
     def post(self,request):
-        serializer = StoreSerializer(storeMaster, many=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(200)
-        return Response(serializer.errors)
+        stores = storeMaster.objects.all()
+        serializer = StoreSerializer(stores, many=True)
+        return Response(serializer.data)
+
 
 @api_view(['POST'])
 def handle_business_inventory(request):
@@ -591,7 +560,56 @@ def handle_customer_details(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class update_customer_details(APIView):
+    def get(self, request, pk):
+        try:
+            detailObj = Customer.objects.get(pk=pk)
+        except Customer.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
 
+        serializer = CustomerSerializer(detailObj)
+        return Response(serializer.data)
+
+    def put(self, request, pk):  # Using the PUT method for updating existing records
+        try:
+            customer_obj = Customer.objects.get(pk=pk)
+        except Customer.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CustomerSerializer(customer_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Customer updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, pk):
+        try:
+            detailObj = Customer.objects.get(pk=pk)
+        except Customer.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CustomerSerializer(detailObj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Employee updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):  # Adding the DELETE method
+        try:
+            customer_obj = Customer.objects.get(pk=pk)
+        except Customer.DoesNotExist:
+            return Response("Not Found in Database", status=status.HTTP_404_NOT_FOUND)
+
+        customer_obj.delete()
+        return Response("Customer deleted successfully", status=status.HTTP_204_NO_CONTENT)
+
+# class delete_business_employee(APIView):
+#     def get(self,request,pk):
+#         try:
+#             detailObj=EmployeeMaster.objects.get(pk=pk)
+#         except:
+#             return Response("Not Found in Database")
+#         detailObj.delete()
+#         return Response(200)
 
 @api_view(['POST'])
 def handle_products_data(request):
@@ -731,6 +749,7 @@ def handle_sales_register(request):
             return Response({'access':'denied'})
     else:
         return Response({'access':'denied'})
+
 
 
 @api_view(['POST'])
@@ -900,7 +919,10 @@ class add_store_under_business_id(APIView):
         detailsObj=storeMaster.objects.all()
         dlSerializeObj=StoreSerializer(detailsObj,many=True)
         return Response(dlSerializeObj.data)
-    
+    def post(self,request):
+        detailsObj=storeMaster.objects.all()
+        dlSerializeObj=StoreSerializer(detailsObj,many=True)
+        return Response(dlSerializeObj.data)
 # @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 # def add_store_under_business_id(request, business_id):
 #     header_info = request.META

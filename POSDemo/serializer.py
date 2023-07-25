@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-
+from django.contrib.auth.models import User
 #from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
 from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
 
@@ -28,7 +28,16 @@ class StoreInventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = storeInventoryMaster
         fields = '__all__'
-class OwnerDetailsSerializer(serializers.ModelSerializer):
+class LoginSerializer(serializers.Serializer):
+     class Meta:
+        model = User
+        username = serializers.CharField()
+        password = serializers.CharField()
+class RegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = OwnerDetails

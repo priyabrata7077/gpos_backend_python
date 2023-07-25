@@ -1,7 +1,7 @@
 from django.db import models
 
 class Owner(models.Model):
-    name = models.CharField(max_length=100 , blank=False)
+    username = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)
     password = models.CharField(blank=False , max_length=100 , unique=True)
     contact_number = models.CharField(blank=False , max_length=10)
@@ -10,7 +10,7 @@ class Owner(models.Model):
     date_of_entry = models.DateField(blank=False)
 
     def __str__(self):
-        return f'{self.name} - {self.pk}'
+        return f'{self.username} - {self.pk}'
 class OwnerDetails(models.Model):
     owner_id = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , related_name='details')
     address = models.CharField(max_length=300)
@@ -45,7 +45,7 @@ class storeMaster(models.Model):
     
     store_name = models.CharField(max_length=100 , blank=False)
     store_location = models.CharField(max_length=200 , blank=False)
-    associated_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , null=True , related_name = 'store')
+    associated_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING, related_name = 'store')
     associated_business = models.ForeignKey(Business , related_name='store' , on_delete=models.DO_NOTHING)
     def __str__(self):
         return f' store ID - {self.pk} ->> {self.store_name} + {self.associated_business}'

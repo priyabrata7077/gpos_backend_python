@@ -20,8 +20,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     #path('', include('myapp.urls')),
-    path('login', views.handle_login , name = 'add-owner'),
-    path('logout' , views.handle_logout , name='logout'  ),
+    path('register', views.register_view, name='owner-registration'),
+    path('login', views.login_view , name = 'login'),
+    path('logout' , views.logout_view , name='logout'  ),
     
     
     path('add-business' , views.handle_business.as_view() , name='add-business' ),
@@ -37,6 +38,7 @@ urlpatterns = [
     
     path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details'),
     path('handle-customer' , views.handle_customer_details , name='get-customer-details'),
+    path('handle-customer/update/<int:pk>' , views.update_customer_details.as_view() , name='update-customer-details'),
     path('handle-products' , views.handle_products_data , name = 'handle-products-data'),
     
     
