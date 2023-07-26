@@ -1,0 +1,130 @@
+.main{
+    height: auto;
+    width: 100%;
+}
+
+.Pagetitle{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.Pagetitle h1{
+    font-size:20px;
+    font-weight:400;
+}
+.heading{
+    border: none !important;
+    padding: 20px 25px;
+}
+.heading h1{
+    color: #525252;
+    font-size: 18px;
+}
+
+.heading label{
+    font-weight: 600;
+}
+
+.offcanvasBody label{
+        font-weight: 600;
+}
+
+.button{
+    box-shadow: inherit !important;
+    background: #0dcaf0 !important;
+    width: 120px;
+}
+
+.tablestyle thead {
+    color:#0dcaf0;
+    background:#32a1b31c ;
+}
+.tablestyle tbody{
+    border: none !important;
+    border-radius: 7px;
+}
+.tablestyle tr td{
+    vertical-align: middle;
+    border-color:rgba(202, 198, 198, 0.349);
+}
+
+.brand_name{
+    font-size: 12px;
+    text-decoration: none;
+    margin-left: 5px;
+    background: #0dcaf054;
+    padding: 3px 6px;
+    border-radius: 5px;
+    color:black;
+    font-weight:500
+}
+
+.deleteModal{
+    background:#32a2b3ad !important;
+}
+
+.deleteModal h1{
+    color:#fff
+}
+
+.deleteModal .modal-header{
+    border: none !important;
+}
+
+.modalHeader{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 0;
+}
+
+.modalBody{
+    color: #fff;
+    padding: 20px 20px;
+}
+
+.modalFooter{
+    padding: 15px 20px 30px;
+    
+}
+
+
+.cancelBtn{
+    background: rgba(255, 0, 0, 0.644) !important;
+    box-shadow: inherit !important;
+    text-transform: capitalize !important;
+    width: 90px;
+}
+
+
+.cancelBtn:hover{
+    background: rgba(255, 0, 0, 0.767) !important;
+}
+
+.saveBtn{
+    background: rgba(0, 238, 255, 0.425) !important;
+    box-shadow: inherit !important;
+    text-transform: capitalize !important;
+    margin-left: 15px !important;
+    width: 90px;
+}
+.saveBtn:hover{
+    background:rgba(0, 238, 255, 0.555) !important;
+}
+
+.actionBtn{
+    background: #0dcaf054 !important;
+    width: 40px;
+    height:40px;
+}
+
+.actionBtn svg{
+    font-size: 18px;
+}
+
+.offcanvasHeading{
+    font-weight:400;
+}
+
+

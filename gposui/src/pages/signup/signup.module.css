@@ -1,0 +1,92 @@
+.login{
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+}
+
+.card{
+    margin: 0 auto;
+    width: 550px;
+    border: 0;
+    padding:30px;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
+
+}
+
+.login h5{
+    font-family: "Lato",sans-serif;
+    font-weight: 600;
+    margin: 0px;
+    line-height: 1.5;
+    color: #525252;
+    font-size: 1.7em;
+    text-align: center;
+}
+
+.login p{
+    color: #676E8A;
+    text-align: center;
+}
+
+.textdiv{
+    width: 100%;
+}
+
+.css-v4u5dn-MuiInputBase-root-MuiInput-root::before{
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+
+}
+
+.textfiled{
+    width: 100%;
+}
+
+.textfiled label{
+    font-size: 14px;
+}
+
+.btndiv{
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    margin: 35px 0 0 0;
+}
+
+.btndiv a{
+    text-decoration: none;
+    color: #32BDEA;
+}
+.btndiv a:hover{
+    text-decoration: underline;
+    text-underline-offset: 7px;
+    color: #32BDEA;
+}
+.loginBtn{
+    background:#32BDEA !important;
+    text-transform: capitalize !important;
+    font-size: 18px !important;
+    margin: 0 0 !important;
+    box-shadow: inherit !important;
+}
+
+
+
+.signupcheck svg{
+    font-size: 14px;
+    color: #32BDEA;
+}
+
+.signupcheck span{
+    font-size: 14px;
+
+}
+
+.selectOption{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.selectOption select{
+    width: 130px;
+}

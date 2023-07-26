@@ -28,7 +28,7 @@ import string
 import secrets
 import hashlib
 import json
-from .models2 import Transaction
+
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from pprint import pprint
 
@@ -265,11 +265,11 @@ def register_view(request):
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class Sales_create(ListCreateAPIView):
-    queryset = Transaction.objects.all()
+    queryset = Sales.objects.all()
     serializer_class = TransactionSerializer
 
 class Sales_update(RetrieveUpdateDestroyAPIView):
-    queryset = Transaction.objects.all()
+    queryset = Sales.objects.all()
     serializer_class = TransactionSerializer
 class handle_business(APIView):
     def get(self,request):

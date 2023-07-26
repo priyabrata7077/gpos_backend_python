@@ -1,0 +1,22 @@
+export const cardData  = [
+    {
+        quantity:12,
+        item:"carrot",
+        id:1
+    },
+    {
+        quantity:5,
+        item:"brinjal",
+        id:2
+    },
+    {
+        quantity:13,
+        item:"potato",
+        id:3
+    },
+    {
+        quantity:34,
+        item:"tomato",
+        id:4
+    }
+]

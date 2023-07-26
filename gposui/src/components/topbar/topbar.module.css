@@ -1,0 +1,54 @@
+.topbar{
+    height: 60px;
+    width:100%;
+    /* box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.06) 0px 1px 2px 0px; */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* position: sticky;
+    top: 0; */
+    padding: 0 48px;
+    border-bottom: 1px solid rgba(155, 155, 155, 0.15);
+}
+.searchItem{
+    display: flex;
+    transform: translateX(50px);
+}
+.search{
+    width: 230px;
+    height: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: #F6F6F7;
+    padding: 0 40px 0 15px;
+    border-radius: 50px;
+}
+.search:focus{
+    box-shadow: inherit;
+    outline: none;
+}
+
+.searchItem span{
+    transform: translate(-35px,4px);
+}
+.topItem{
+    display: flex;
+    
+}
+
+.topItem .navbtn{
+    border: none;
+    background: transparent;
+    width: 40px;
+    height: 40px;
+    border-radius: 50px;
+}
+
+.topItem svg{
+    font-size: 18px;
+    color: #67748E;
+}
+
+
+.css-to4x1n-MuiBadge-badge{
+    font-size: 12px !important;
+}

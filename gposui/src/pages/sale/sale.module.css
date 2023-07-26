@@ -1,0 +1,161 @@
+.main {
+    height: auto;
+    width: 100%;
+}
+
+.Pagetitle h1 {
+    font-size: 20px;
+    font-weight: 400;
+}
+
+.Pagetitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.Pagetitle a {
+    text-decoration: none;
+}
+
+.Pagetitle button {
+    background: #0dcaf0;
+    box-shadow: inherit;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.cardContainer {
+    padding: 22px 25px 36px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+    margin-top: 20px;
+}
+
+
+
+.cardContainer h6 {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.226);
+    padding-bottom: 12px;
+    font-size: 22px;
+}
+
+
+.cardContainer input {
+    border: 1px solid rgba(128, 128, 128, 0.226);
+    background: #32a1b31c;
+    padding: 7px;
+}
+
+.cardContainer label {
+    margin: 5px 0;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.btn button {
+    background: #0dcaf0 !important;
+    padding: 8px 27px !important;
+    text-transform: capitalize !important;
+    font-size: 17px !important;
+    box-shadow: inherit !important;
+    font-weight: 500 !important;
+    letter-spacing: 2px !important;
+}
+
+.btn {
+    text-align: end;
+    margin-top: 25px;
+}
+
+.btn a {
+    text-decoration: none;
+}
+
+
+/* saleList */
+.theadRow{
+    background: #32a1b31c;
+}
+
+.tableContainer{
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px !important;
+}
+
+
+.tableContainer button:hover svg{
+    color:#0dcaf0;
+}
+
+
+.theadRow tr th{
+    color:#0dcaf0;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.actionBtn{
+    background: #0dcaf054 !important;
+    width: 40px;
+    height:40px;
+}
+
+.actionBtn svg{
+    font-size: 18px;
+}
+
+
+.deleteModal{
+    background:#32a2b3 !important ;
+}
+
+.deleteModal h1{
+    color:#fff
+}
+
+.deleteModal .modal-header{
+    border: none !important;
+}
+
+.modalHeader{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 0;
+}
+
+.modalBody{
+    color: #fff;
+    padding: 20px 20px;
+}
+
+.modalFooter{
+    padding: 15px 20px 30px;
+    
+}
+
+
+.cancelBtn{
+    background: rgba(255, 0, 0, 0.644) !important;
+    box-shadow: inherit !important;
+    text-transform: capitalize !important;
+    width: 90px;
+}
+
+
+.cancelBtn:hover{
+    background: rgba(255, 0, 0, 0.767) !important;
+}
+
+.saveBtn{
+    background: rgba(0, 238, 255, 0.425) !important;
+    box-shadow: inherit !important;
+    text-transform: capitalize !important;
+    margin-left: 15px !important;
+    width: 90px;
+}
+.saveBtn:hover{
+    background:rgba(0, 238, 255, 0.555) !important;
+}

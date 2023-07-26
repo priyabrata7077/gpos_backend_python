@@ -1,0 +1,41 @@
+.main{
+    height: auto;
+    width: 100%;
+}
+
+.Pagetitle{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.Pagetitle h1{
+    font-size:20px;
+    font-weight:400;
+}
+
+
+.selectBar select{
+    box-shadow: inherit !important;
+}
+
+.addOwner{
+    display: flex;
+    align-items: center;
+}
+.addOwner a{
+    text-decoration: none;
+}
+.addOwner button{
+    box-shadow: inherit;
+    font-size: 12px;
+    padding: 4px 7px;
+    text-transform: capitalize;
+    margin-right:7px;
+    font-weight: 600;
+    background: #0dcaf0;
+    border: none !important;
+}
+.addOwner button:hover{
+    background: #0dcaf0;
+}

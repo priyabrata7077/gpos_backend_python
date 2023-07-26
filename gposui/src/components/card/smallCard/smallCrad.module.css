@@ -1,0 +1,45 @@
+.cardInside{
+    padding: 15px 21px 50px;
+    background:#fff;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    position: relative;
+
+}
+
+.cardItem{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 3;
+}
+.cardItem h2{
+    font-size: 25px;
+    font-weight: 700;
+    transform: translateX(-75%);
+}
+.cardItem h2 span{
+    color: #000;
+    font-size: 14px;
+    font-weight: 400;
+    margin-top: 12px;
+}
+.cardItem svg{
+    font-size:36px;
+    font-weight: 400;
+    margin-top: 0;
+    padding-top: 3px;
+    color: #1ea2bc;
+}
+
+.icons{
+    /* background:#ddf8fd ; */
+    width: 55px;
+    height: 55px;
+    border-radius: 10px;
+    text-align: center;
+    line-height: 45px;
+}

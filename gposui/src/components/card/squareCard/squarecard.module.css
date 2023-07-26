@@ -1,0 +1,19 @@
+.squareInside{
+    padding:20px 25px;
+    background:#fff;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}
+
+.squareItem{
+    border-bottom: 1px solid rgba(216, 209, 209, 0.585);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(155, 155, 155, 0.308);
+    padding-bottom: 6px;
+}
+
+.squareItem h5{
+    color: #525252;
+    font-size: 18px;
+}

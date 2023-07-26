@@ -1,0 +1,26 @@
+.dashboard{
+    height: 100vh;
+    width: 100%;
+    display: flex;
+}
+
+.contentWrapper{
+    height: calc(100% - 70px);
+    width: 100%;
+    overflow: hidden;
+    overflow-y: scroll;
+    padding: 25px 40px;
+    background: #f7f9fb;
+}
+
+.contentWrapper::-webkit-scrollbar
+{
+	width: 2px;
+	background-color: #F5F5F5;
+}
+
+.contentWrapper::-webkit-scrollbar-thumb
+{
+	background-color: #777777;
+	border: 2px solid #555555;
+}

@@ -1,0 +1,60 @@
+.onboard{
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card{
+    margin: 0 auto;
+    border: 0 !important;
+    padding:30px 50px;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
+}
+
+.card h5{
+    text-align: center;
+    font-family: "Lato",sans-serif;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    font-size: 1.7em;
+    color:#32BDEA ;
+}
+
+.card h6{
+    font-weight: 600;
+    font-size: 20px;
+    padding:10px 0 7px ;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.226);
+    line-height: 1.5;
+    color: #525252;
+}
+
+
+.formArea input{
+    /* border: 1px solid rgba(128, 128, 128, 0.226); */
+    background:  #32a1b31c;
+    border-radius:7px ;
+    border: none;
+    border-bottom: 1px solid #32a2b38a;
+}
+
+.formArea input:focus{
+    box-shadow: inherit;
+}
+
+
+.formArea label{
+    margin:5px 0;
+    font-size: 16px;
+    font-weight: 400;
+    color: #525252;
+    letter-spacing: 0.3px;
+}
+
+
+.onboardBtn{
+    background: #32BDEA !important;
+    color:#fff !important;
+}

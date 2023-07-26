@@ -1,0 +1,46 @@
+.chartInside{
+    padding:20px 25px;
+    background:#fff;
+    border-radius: 10px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}
+
+.chartTitle{
+    border-bottom: 1px solid rgba(216, 209, 209, 0.585);
+    border-bottom: 1px solid rgba(155, 155, 155, 0.308);
+    padding-bottom: 6px;
+}
+
+.chartTitle h5{
+    color: #525252;
+    font-size: 18px;
+}
+
+.chartItem p{
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(155, 155, 155, 0.308);
+    padding-bottom: 5px;
+    align-items: center;
+}
+
+.chartItem p:last-child{
+    border-bottom: none;
+    padding-bottom: 0px;
+
+}
+
+.leftItem{
+    font-size: 14px;
+}
+
+.leftItem svg{
+    font-size: 16px;
+    color:red;
+}
+
+
+.chartselect{
+    width: 100px;
+}
+

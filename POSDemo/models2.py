@@ -1,6 +1,6 @@
 from django.db import models
 
-class Transaction(models.Model):
+class Sales(models.Model):
     # business_id = models.ForeignKey(Business, on_delete=models.CASCADE)
     # transaction_id = models.ForeignKey(TransactionDetail, on_delete=models.CASCADE)
     # item_master_id = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
