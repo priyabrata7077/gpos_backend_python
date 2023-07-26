@@ -1,5 +1,20 @@
 from django.db import models
 
+class Transaction(models.Model):
+    # business_id = models.ForeignKey(Business, on_delete=models.CASCADE)
+    # transaction_id = models.ForeignKey(TransactionDetail, on_delete=models.CASCADE)
+    # item_master_id = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
+    # item_variation_id = models.ForeignKey(ItemVariation, null=True, blank=True, on_delete=models.CASCADE)
+    # customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    # store_id = models.ForeignKey(Store, on_delete=models.CASCADE)
+    # store_stock_id = models.ForeignKey(StoreStock, on_delete=models.CASCADE)
+    qty = models.PositiveIntegerField()
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    sale_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    sub_total = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 class Owner(models.Model):
     username = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)

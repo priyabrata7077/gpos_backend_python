@@ -2,8 +2,12 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from django.contrib.auth.models import User
 #from .models import ProductInventoryManagement , Product , Customer , Orders , Employee , Categories , SubCategory , Company , Brand
-from .models2 import Owner , Business , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
+from .models2 import Owner , Business, Transaction , storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
 
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
 class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -29,10 +33,18 @@ class StoreInventorySerializer(serializers.ModelSerializer):
         model = storeInventoryMaster
         fields = '__all__'
 class LoginSerializer(serializers.Serializer):
-     class Meta:
-        model = User
-        username = serializers.CharField()
-        password = serializers.CharField()
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(trim_whitespace=False)
+
+    def validate(self, data):
+        username = data.get('username')
+        password = data.get('password')
+
+        if username and password:
+            # You can add any additional validation here, if needed.
+            return data
+        else:
+            raise serializers.ValidationError("Username and password are required.")
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

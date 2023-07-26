@@ -143,3 +143,13 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',  # Replace with your frontend URL
     # Other allowed origins
 ]
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'cs-mum-9.webhostbox.net'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = True  # Set to False if you use SSL
+EMAIL_HOST_USER = 'priyabrata@thegraphe.com'
+EMAIL_HOST_PASSWORD = 'Graphe@1105'
+DEFAULT_FROM_EMAIL = 'priyabrata@thegraphe.com'
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]

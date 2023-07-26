@@ -20,10 +20,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     #path('', include('myapp.urls')),
+    path('forgot-password', views.custom_password_reset, name='forgot_password'),
     path('register', views.register_view, name='owner-registration'),
     path('login', views.login_view , name = 'login'),
     path('logout' , views.logout_view , name='logout'  ),
-    
+     path('sales', views.Sales_create.as_view(), name='sales-create'),
+    path('sales/<int:pk>', views.Sales_update.as_view(), name='sales-update'),
     
     path('add-business' , views.handle_business.as_view() , name='add-business' ),
     path('add-business/update/<int:pk>' , views.update_handle_business.as_view() , name='update-business' ),

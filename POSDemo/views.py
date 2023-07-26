@@ -3,6 +3,10 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from jwt import DecodeError, InvalidKeyError
 import jwt
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetView
+from django.core.mail import send_mail
 from rest_framework.decorators import api_view, permission_classes
 from dateutil import tz
 from rest_framework import viewsets
@@ -24,6 +28,8 @@ import string
 import secrets
 import hashlib
 import json
+from .models2 import Transaction
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from pprint import pprint
 
 from POSDemo import serializer
@@ -196,10 +202,29 @@ def convert_time_to_ist(datetimeObj):
 #################################################################################################
 
 # token data in header 'HTTP_AUTHORIZATION': 'Bearer oEYOaVC955Onygsp3jjNmNQ8NTFUEDcv'
+def custom_password_reset(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User with this email does not exist.'}, status=400)
+        
+        # Generate password reset token and send email
+        token = default_token_generator.make_token(user)
+        reset_url = f'http://your-frontend-url/reset-password/{user.id}/{token}/'
+        send_mail(
+            'Password Reset',
+            f'Click the link below to reset your password: {reset_url}',
+            'noreply@example.com',
+            [email],
+            fail_silently=False,
+        )
+        return JsonResponse({'message': 'Password reset email sent successfully.'}, status=200)
+    return JsonResponse({}, status=405)  
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    # Deserialize the request data using the LoginSerializer
     serializer = LoginSerializer(data=request.data)
     
     if serializer.is_valid():
@@ -231,10 +256,21 @@ def logout_view(request):
 def register_view(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
+        # Hash the password before saving the user
+        hashed_password = make_password(serializer.validated_data['password'])
+        serializer.validated_data['password'] = hashed_password
+
         user = serializer.save()
         return Response({'detail': 'Registration successful'}, status=status.HTTP_201_CREATED)
     else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class Sales_create(ListCreateAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+
+class Sales_update(RetrieveUpdateDestroyAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
 class handle_business(APIView):
     def get(self,request):
         detailsObj=Business.objects.all()
