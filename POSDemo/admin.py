@@ -1,6 +1,6 @@
 from django.contrib import admin
-
-from .models2 import Owner , Business, Sales , storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails , SalesRegister , ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission , Categories
+from .models import *
+from .models2 import Owner , Business, Sales, storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails, ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission , Categories
 '''
 admin.site.register(ProductInventoryManagement)
 admin.site.register(Day_Wise_Employee_Management)
@@ -30,7 +30,6 @@ admin.site.register(Customer)
 admin.site.register(Product)
 admin.site.register(VariableProduct)
 admin.site.register(TaxMaster)
-admin.site.register(SalesRegister)
 admin.site.register(ModeOfPayment)
 admin.site.register(Barcode)
 admin.site.register(TransactionDetailsMaster)
