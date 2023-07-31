@@ -9,7 +9,9 @@ class Sales(models.Model):
     customer = models.ForeignKey(User, on_delete=models.CASCADE)
     #associated_owner = models.ForeignKey('POSDemo.Owner', on_delete=models.CASCADE, related_name='sales')
     store = models.ForeignKey('POSDemo.storeMaster', on_delete=models.CASCADE, related_name='sales')
-
+    #store_stock= models.ForeignKey('POSDemo.storeStock', on_delete=models.CASCADE)
+   # Transaction= models.ForeignKey('POSDemo.TransactionDetailsMaster', on_delete=models.CASCADE)
+    
     qty = models.PositiveIntegerField()
     purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
     mrp = models.DecimalField(max_digits=10, decimal_places=2)
