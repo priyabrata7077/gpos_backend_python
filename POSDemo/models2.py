@@ -1,16 +1,15 @@
+from django.contrib.auth import get_user_model
 from django.db import models
-
+#
+User = get_user_model()
 
 
 class Sales(models.Model):
-#     # business_id = models.ForeignKey(Business, on_delete=models.CASCADE)
-#     transaction_id = models.ForeignKey(TransactionDetail, on_delete=models.CASCADE)
-#     item_master_id = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
-#     item_variation_id = models.ForeignKey(ItemVariation, null=True, blank=True, on_delete=models.CASCADE)
-#      customer_id = models.ForeignKey(Customer, on_delete=models.DO_NOTHING , related_name='sales')
- #   store_id = models.ForeignKey(storeMaster, on_delete=models.CASCADE)  # Connecting to storeMaster model
-#     store_stock_id = models.ForeignKey(StoreStock, on_delete=models.CASCADE)
-      
+    business = models.ForeignKey('POSDemo.Business', on_delete=models.CASCADE)
+    customer = models.ForeignKey(User, on_delete=models.CASCADE)
+    #associated_owner = models.ForeignKey('POSDemo.Owner', on_delete=models.CASCADE, related_name='sales')
+    store = models.ForeignKey('POSDemo.storeMaster', on_delete=models.CASCADE, related_name='sales')
+
     qty = models.PositiveIntegerField()
     purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
     mrp = models.DecimalField(max_digits=10, decimal_places=2)
@@ -18,6 +17,9 @@ class Sales(models.Model):
     sub_total = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.customer_id} - Sale"
 class Owner(models.Model):
     username = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)
@@ -66,7 +68,7 @@ class storeMaster(models.Model):
     associated_owner = models.ForeignKey(Owner , on_delete=models.DO_NOTHING, related_name = 'store')
     associated_business = models.ForeignKey(Business , related_name='store' , on_delete=models.DO_NOTHING)
     def __str__(self):
-        return f' store ID - {self.pk} ->> {self.store_name} + {self.associated_business}'
+        return f' store ID - {self.pk} ->> {self.store_name}'
 
 class auth(models.Model):
     user_name = models.CharField(max_length=100)
@@ -138,7 +140,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=100 , blank=False)
     contact = models.CharField(max_length=10 , unique=True , blank=False) 
     address = models.CharField(max_length=200 , blank=False )
-    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
+    #store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
     
     
 class TaxMaster(models.Model):
