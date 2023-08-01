@@ -1,17 +1,17 @@
-from django.contrib.auth import get_user_model
+
 from django.db import models
-#
-User = get_user_model()
 
 
 class Sales(models.Model):
+    #foreign key connection 
     business = models.ForeignKey('POSDemo.Business', on_delete=models.CASCADE)
-    customer = models.ForeignKey(User, on_delete=models.CASCADE)
-    #associated_owner = models.ForeignKey('POSDemo.Owner', on_delete=models.CASCADE, related_name='sales')
+    customer = models.ForeignKey('POSDemo.Customer', on_delete=models.CASCADE)
     store = models.ForeignKey('POSDemo.storeMaster', on_delete=models.CASCADE, related_name='sales')
-    #store_stock= models.ForeignKey('POSDemo.storeStock', on_delete=models.CASCADE)
-   # Transaction= models.ForeignKey('POSDemo.TransactionDetailsMaster', on_delete=models.CASCADE)
-    
+    store_stock = models.ForeignKey('POSDemo.StoreStock', on_delete=models.CASCADE, related_name='sales')
+    item_master= models.ForeignKey('POSDemo.ItemMaster', on_delete=models.CASCADE)
+    item_variation= models.ForeignKey('POSDemo.ItemVariation', on_delete=models.CASCADE)
+    Transaction = models.ForeignKey('POSDemo.TransactionDetailsMaster', on_delete=models.CASCADE, related_name='sales')
+    #end foreign key connection
     qty = models.PositiveIntegerField()
     purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
     mrp = models.DecimalField(max_digits=10, decimal_places=2)
@@ -22,6 +22,21 @@ class Sales(models.Model):
 
     def __str__(self):
         return f"{self.customer_id} - Sale"
+class StoreStock(models.Model):
+    store_id = models.ForeignKey('storeMaster', on_delete=models.CASCADE)
+    item_master_id = models.ForeignKey('ItemMaster', on_delete=models.CASCADE)
+    item_variation_id = models.ForeignKey('ItemVariation', on_delete=models.CASCADE, blank=True, null=True)
+    barcode = models.CharField(max_length=100)
+    stock_qty = models.PositiveIntegerField()
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    sale_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    expire_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"StoreStock {self.id} - {self.item_master_id} - {self.store_id}"
 class Owner(models.Model):
     username = models.CharField(max_length=100 , blank=False)
     email = models.EmailField(blank=False , unique=True)
@@ -46,9 +61,8 @@ class OwnerDetails(models.Model):
         return f'Details of {self.owner_id}'
     
 class Business(models.Model):
-            
+    name = models.CharField(max_length=50)
     owner_id = models.ForeignKey(Owner , related_name='business' , blank=False , on_delete=models.DO_NOTHING)
-    name = models.CharField(max_length=50 , blank=False)
     email = models.EmailField(blank=True)
     phone = models.CharField(blank=True , max_length=12)
     address = models.CharField(blank=False , max_length=300)
@@ -81,7 +95,96 @@ class auth(models.Model):
     token_expiry = models.DateTimeField(blank=True , null=True)
     def __str__(self):
         return f'{self.user_name} - {self.token} '
+class ItemVariation(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    hsn = models.CharField(max_length=20)
+    barcode_1 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_2 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_3 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_4 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_5 = models.CharField(max_length=100, blank=True, null=True)
+    stock_qty = models.PositiveIntegerField()
+    weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    expire_date = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    # ForeignKey fields
+    item_master_id = models.ForeignKey('ItemMaster', on_delete=models.CASCADE)
+    item_attribute_id = models.ForeignKey('ItemAttribute', on_delete=models.CASCADE)
+    item_attribute_option = models.ForeignKey('ItemAttributesOptions', on_delete=models.CASCADE)
+    #tax_master_id = models.ForeignKey('YourTaxMasterModel', on_delete=models.CASCADE)
+    #unit_id = models.ForeignKey('YourUnitModel', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+class ItemAttribute(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # ForeignKey fields
+    item_master_id = models.ForeignKey('ItemMaster', on_delete=models.CASCADE)
+    #attribute_id = models.ForeignKey('ItemAttributesOptions', on_delete=models.CASCADE)
+
+    # ManyToManyField
+    item_attribute_option_ids = models.ManyToManyField('ItemAttributesOptions', related_name='item_attributes')
+
+    def __str__(self):
+        return f"ItemAttribute {self.id} - {self.item_master_id}"
+class ItemAttributesOptions(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # ForeignKey fields
+    item_master_id = models.ForeignKey('ItemMaster', on_delete=models.CASCADE)
+    #item_attribute_id = models.ForeignKey('YourItemAttributeModel', on_delete=models.CASCADE)
+    #attribute_option_id = models.ForeignKey('YourAttributeOptionModel', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"ItemAttributeOption {self.id} - {self.item_master_id}"
+class ItemMaster(models.Model):
+    TYPE_CHOICES = [
+        ('simple', 'Simple'),
+        ('variable', 'Variable'),
+        ('group', 'Group'),
+    ]
+
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    hsn = models.CharField(max_length=20)
+    barcode_1 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_2 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_3 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_4 = models.CharField(max_length=100, blank=True, null=True)
+    barcode_5 = models.CharField(max_length=100, blank=True, null=True)
+    stock_qty = models.PositiveIntegerField()
+    weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    expire_date = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # ForeignKey fields
+    business = models.ForeignKey(Business, on_delete=models.CASCADE)
+    #brand = models.ForeignKey('YourBrandModel', on_delete=models.CASCADE)
+    #company = models.ForeignKey('YourCompanyModel', on_delete=models.CASCADE)
+    #tax_master_id = models.ForeignKey('YourTaxMasterModel', on_delete=models.CASCADE)
+    #unit_id = models.ForeignKey('YourUnitModel', on_delete=models.CASCADE)
+
+    # ManyToManyFields
+    #category_ids = models.ManyToManyField('YourCategoryModel', related_name='items')
+    #attribute_ids = models.ManyToManyField('YourAttributeModel', related_name='items')
+    #attribute_options_ids = models.ManyToManyField('YourAttributeOptionModel', related_name='items')
+    #variation_ids = models.ManyToManyField('YourVariationModel', related_name='items')
+
+    # Recursive ForeignKey (item_master_id can refer to another item_master)
+    #item_master_id = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 
 class JwtAuth(models.Model):
     jwt = models.CharField(max_length=300)
@@ -142,7 +245,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=100 , blank=False)
     contact = models.CharField(max_length=10 , unique=True , blank=False) 
     address = models.CharField(max_length=200 , blank=False )
-    #store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
+    store = models.ForeignKey(storeMaster , on_delete=models.DO_NOTHING , related_name='customer')
     
     
 class TaxMaster(models.Model):
@@ -271,8 +374,8 @@ class TransactionDetailsMaster(models.Model):
     business = models.ForeignKey(Business , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
     store = models.ForeignKey(storeMaster , related_name='transactiondetails' , on_delete=models.DO_NOTHING)
     employee = models.ForeignKey(EmployeeMaster , on_delete=models.DO_NOTHING , related_name='transactiondetails')
-    mop = models.JSONField()
-    products = models.JSONField()
+    #mop = models.JSONField()
+    #products = models.JSONField()
     
     def __str__(self):
         return f' EM -> {self.employee} | store -> {self.store}'

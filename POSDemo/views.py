@@ -33,7 +33,18 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from pprint import pprint
 
 from POSDemo import serializer
-
+class Store_stock(ListCreateAPIView):
+    queryset = StoreStock.objects.all()
+    serializer_class = StoreStockSerializer
+class Transactions(ListCreateAPIView):
+    queryset = TransactionDetailsMaster.objects.all()
+    serializer_class = TransactionDetailsSerializer
+class Item_Master(ListCreateAPIView):
+    queryset = ItemMaster.objects.all()
+    serializer_class = ItemMasterSerializer
+class Item_variation(ListCreateAPIView):
+    queryset = ItemVariation.objects.all()
+    serializer_class = ItemVariationSerializer
 #Custom Helper Functions 
 ########################################################################
 def gen_token():

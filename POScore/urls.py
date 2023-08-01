@@ -35,15 +35,16 @@ urlpatterns = [
     
     #paths not to be given importance ri8 now
     path('business-inventory' , views.handle_business_inventory , name = 'business-inventory-management' ),
-    
-   
-    
+    path('transactions' , views.Transactions.as_view() , name='transactions'),
+    path('item-variations' , views.Item_variation.as_view() , name='Item-veriation'),
+    path('item' , views.Item_Master.as_view() , name='Item'),
+
     path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details'),
     path('handle-customer' , views.handle_customer_details , name='get-customer-details'),
     path('handle-customer/update/<int:pk>' , views.update_customer_details.as_view() , name='update-customer-details'),
     path('handle-products' , views.handle_products_data , name = 'handle-products-data'),
     
-    
+    path('store-stock' , views.Store_stock.as_view(), name = 'stock'),
     path('sales-pending' , views.handle_sales_pending , name = 'handle-sales-pending'),
     path('generate-bill' , views.handle_sales_register , name = 'generate-bill-and-handle-sales-register'),
     path( 'transaction-details' , views.handle_transaction_details , name = 'handle-transaction-details' ),

@@ -2,8 +2,16 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from django.contrib.auth.models import User
 from .models import *
-from .models2 import Owner , Sales, Business, storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
+from .models2 import ItemMaster, ItemVariation, Owner , Sales, Business, StoreStock, storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
 
+class StoreStockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreStock
+        fields = '__all__'
+class ItemVariationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemVariation
+        fields = '__all__'
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
@@ -12,7 +20,12 @@ class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Owner
-        fields = '__all__'        
+        fields = '__all__'  
+class ItemMasterSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = ItemMaster
+        fields = '__all__'      
 class BusinessSerializer(serializers.ModelSerializer):
     
     class Meta:
