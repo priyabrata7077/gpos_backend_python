@@ -1,7 +1,12 @@
 
 from django.db import models
 
-
+class Category(models.Model):
+    business_id = models.ForeignKey('Business', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, unique=True)
+    cat_parent_id = models.ForeignKey('self', on_delete=models.CASCADE, null=False, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 class Sales(models.Model):
     #foreign key connection 
     business = models.ForeignKey('POSDemo.Business', on_delete=models.CASCADE)

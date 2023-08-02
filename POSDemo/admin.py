@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import *
-from .models2 import ItemAttribute, ItemAttributesOptions, Owner,ItemVariation,ItemMaster, StoreStock, Business, Sales, storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails, ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission , Categories
+from .models2 import Category, ItemAttribute, ItemAttributesOptions, Owner,ItemVariation,ItemMaster, StoreStock, Business, Sales, storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails, ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission , Categories
 '''
 admin.site.register(ProductInventoryManagement)
 admin.site.register(Day_Wise_Employee_Management)
@@ -18,6 +18,7 @@ admin.site.register(Sales)
 admin.site.register(Owner)
 admin.site.register(OwnerDetails)
 admin.site.register(Business)
+admin.site.register(Category)
 admin.site.register(BusinessInventoryMaster)
 admin.site.register(storeMaster)
 admin.site.register(storeInventoryMaster)

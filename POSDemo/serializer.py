@@ -62,7 +62,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
-class OwnerSerializer(serializers.ModelSerializer):
+class OwnerDetailsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = OwnerDetails

@@ -410,104 +410,18 @@ class delete_business_employee(APIView):
          
          
 
-@api_view(['POST' , 'GET'])         
-def handle_owner_details(request):
-    header_info = request.META
-    print(header_info)
-    if request.method == 'POST':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-           
-            jwt_from_res = header_info['HTTP_AUTHORIZATION']
-            print(f'token found from header {jwt_from_res}')
-            if jwt_from_res == " " or jwt_from_res == "":
-                return Response({'access':"denied"})
-            token_status , owner_id = check_jwt_validity(jwt_from_res)
-            print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||')
-            #checking if the token has expired with the help of the custom function check_token_expiry()
-            
-            if token_status == True:
-                data_dict = dict(request.data)
-                data_dict['owner_id'] = owner_id
-                data_dict['date_of_entry'] = datetime.now().date()
-                serializer = OwnerDetailsSerializer(data = data_dict)
-                
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(data_dict)
-                else:
-                    serializer_error_dict = dict(serializer.errors)
-                    error_list_for_response =[]
-                    for error in serializer_error_dict.keys():
-                        error_list_for_response.append(serializer_error_dict[error][0])
-                    return Response({'error':error_list_for_response})
-                        
-
-            else:
-                return Response({"access":"denied"})
-        else:
-            
-            return Response({'access':'denied'})        
+      
+class handle_owner_details(ListCreateAPIView):
+    queryset = Owner.objects.all() 
+    serializer_class = OwnerSerializer
+     
 
     
     
     
-@api_view(['POST'])
-def handle_owner(request):
-    header_info = request.META
-    if request.method =='POST':
-        
-        ip_of_host_from_header = header_info['REMOTE_ADDR']
-        
-        
-        clean_data_dict = dict(request.data)
-        pprint(clean_data_dict)
-        
-        #hashing the password
-        clean_data_dict['password'] = hash_pass(clean_data_dict['password'])
-        
-        #converting the password into a jwt (JSON Web Token) format for authentication
-        
-        
-        clean_data_dict['date_of_entry'] = datetime.now().date()
-        print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ password has been hashed bro')
-        #print(f'{data} ============================================= {type(data)}')
-        print(f'{clean_data_dict} ============================================= {type(clean_data_dict)}')
-        serializer = OwnerSerializer(data = clean_data_dict)
-        if serializer.is_valid():
-            owner_instance = serializer.save()
-            
-            #user_token = gen_token()
-            
-            #creating a jwt (Json Web Token) with the owner id and his/her hashed password as payload
-            user_jwt = create_jwt(owner_id = owner_instance.pk , hashed_pass =  clean_data_dict['password'] , employee=False)
-
-            user_token_expiry = datetime.now() + timedelta(days=1)
-            user_auth = JwtAuth(jwt=user_jwt , expiry = user_token_expiry)
-            user_auth.save()
-            
-            
-            return Response({'user added':True , 'generated jwt token':user_jwt})
-        else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})
-    
-    
-    if request.method == 'GET':
-        if 'HTTP_AUTHORIZATION' in header_info.keys():
-            token_from_header = header_info['HTTP_AUTHORIZATION']
-            if token_from_header.split(' ')[1] == " ":
-                return Response({'token':'NULL'})
-        token_status , owner_pk = check_jwt_validity(token_from_header)
-        print(f'{token_status} -+ -+ -+ -+ -+ {owner_pk}')
-        if token_status == True:
-            data = request.data
-            return Response({'access':'granted'})
-        else:
-            return Response({'access':'denied'})
-
+class handle_owner(ListCreateAPIView):
+    queryset = OwnerDetails.objects.all() 
+    serializer_class = OwnerSerializer
 
 class handle_store(APIView):
     def get(self, request):
@@ -961,15 +875,14 @@ def handle_product_master(request):
         else:
             return Response({'access':'denied'})
     
-class add_store_under_business_id(APIView):
-    def get(self,request):
-        detailsObj=storeMaster.objects.all()
-        dlSerializeObj=StoreSerializer(detailsObj,many=True)
-        return Response(dlSerializeObj.data)
-    def post(self,request):
-        detailsObj=storeMaster.objects.all()
-        dlSerializeObj=StoreSerializer(detailsObj,many=True)
-        return Response(dlSerializeObj.data)
+# class add_store_under_business_id(APIView):
+#     def get(self,request):
+#         detailsObj=storeMaster.objects.all()
+#         dlSerializeObj=StoreSerializer(detailsObj,many=True)
+#         return Response(dlSerializeObj.data)
+class add_store_under_business_id(ListCreateAPIView):
+        queryset = storeMaster.objects.all() 
+        serializer_class = StoreSerializer
 # @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 # def add_store_under_business_id(request, business_id):
 #     header_info = request.META

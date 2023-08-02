@@ -29,7 +29,7 @@ urlpatterns = [
     
     path('add-business' , views.handle_business.as_view() , name='add-business' ),
     path('add-business/update/<int:pk>' , views.update_handle_business.as_view() , name='update-business' ),
-    path('add-owner' , views.handle_owner , name = 'add-owner' ),
+    path('add-owner' , views.handle_owner.as_view(), name = 'add-owner' ),
     path('add-store' , views.handle_store.as_view() , name = 'add-store'),
     path('business/store/add/<int:business_id>/', views.add_store_under_business_id.as_view(), name='add_store_under_business'),
     
@@ -39,7 +39,7 @@ urlpatterns = [
     path('item-variations' , views.Item_variation.as_view() , name='Item-veriation'),
     path('item' , views.Item_Master.as_view() , name='Item'),
 
-    path('add-owner-details' , views.handle_owner_details , name='Handle-Owner-Details'),
+    path('add-owner-details' , views.handle_owner_details.as_view() , name='Handle-Owner-Details'),
     path('handle-customer' , views.handle_customer_details , name='get-customer-details'),
     path('handle-customer/update/<int:pk>' , views.update_customer_details.as_view() , name='update-customer-details'),
     path('handle-products' , views.handle_products_data , name = 'handle-products-data'),
