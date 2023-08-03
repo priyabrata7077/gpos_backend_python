@@ -417,12 +417,18 @@ class handle_owner_details(ListCreateAPIView):
      
 
     
-    
-    
+class CompanyDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer    
+class CompanyView(ListCreateAPIView):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer    
 class handle_owner(ListCreateAPIView):
     queryset = OwnerDetails.objects.all() 
     serializer_class = OwnerSerializer
-
+class update_store(RetrieveUpdateDestroyAPIView):
+    queryset = storeMaster.objects.all()
+    serializer_class = StoreSerializer
 class handle_store(APIView):
     def get(self, request):
         # Handle GET request to fetch store data

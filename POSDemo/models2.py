@@ -64,7 +64,11 @@ class OwnerDetails(models.Model):
     
     def __str__(self):
         return f'Details of {self.owner_id}'
-    
+class Company(models.Model):
+    business = models.ForeignKey('Business', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)     
 class Business(models.Model):
     name = models.CharField(max_length=50)
     owner_id = models.ForeignKey(Owner , related_name='business' , blank=False , on_delete=models.DO_NOTHING)
