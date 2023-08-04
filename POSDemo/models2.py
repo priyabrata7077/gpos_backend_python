@@ -1,4 +1,5 @@
 from django.db import models
+# ===================================priyabrata==========================================================================
 
 class Owner(models.Model):
    
@@ -13,7 +14,7 @@ class Owner(models.Model):
     def __str__(self):
         return f'{self.name} - {self.pk}'
 class OwnerDetails(models.Model):
-    owner_id = models.ForeignKey(Owner , on_delete=models.DO_NOTHING , related_name='details')
+    owner_id = models.ForeignKey(Owner, on_delete=models.DO_NOTHING , related_name='details')
     address = models.CharField(max_length=300)
     city = models.CharField(max_length=20)
     pin = models.CharField(max_length=6)
