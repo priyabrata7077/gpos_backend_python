@@ -72,7 +72,9 @@ urlpatterns = [
     path('business/store/purchase/pending' , views.purchase_pending , name = 'handle-purchase-pending' ),
     path('business/store/purchase/register' , views.purchase_register , name = 'handle-purchase-register' ),
     path('business/store/purchase/transaction' , views.handle_purchase_transaction , name = 'handle-purchase-transaction' ),
-    path('business/store/products/category/add' , views.handle_product_categories , name='add-product-categories')
+    path('category' , views.category.as_view(), name='addcategory'),
+    path('category/<int:pk>/', views.CategoryDetail.as_view(), name='category-detail'),
+
 
     #path('handle-business/store-inventory' , views.handle_store_inventory , name = 'handle-store-inventory')
 ]

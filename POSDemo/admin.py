@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import *
-from .models2 import Category, ItemAttribute, ItemAttributesOptions, Owner,ItemVariation,ItemMaster, StoreStock, Business, Sales, storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails, ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission , Categories
+from .models2 import Category, ItemAttribute, ItemAttributesOptions, Owner,ItemVariation,ItemMaster, StoreStock, Business, Sales, storeMaster , storeInventoryMaster , auth ,BusinessInventoryMaster , EmployeeMaster , EmployeeAuth  , Customer ,Product , TaxMaster ,  OwnerDetails, ModeOfPayment , Barcode  , SalesPending , GenBill , JwtAuth , TransactionDetailsMaster , ReturnSalesPending , ReturnTransactionDetails , SalesReturnRegister , EmployeeCredential ,  VariableProduct , PurchaseRegister , PurchaseTransactionDetails , SupplierMaster , Daily_employee_management , PurchasePending , Roles , Permission
 '''
 admin.site.register(ProductInventoryManagement)
 admin.site.register(Day_Wise_Employee_Management)
@@ -46,7 +46,6 @@ admin.site.register(Daily_employee_management)
 admin.site.register(PurchasePending)
 admin.site.register(Roles)
 admin.site.register(Permission)
-admin.site.register(Categories)
 admin.site.register(StoreStock)
 admin.site.register(ItemVariation)
 admin.site.register(ItemMaster)

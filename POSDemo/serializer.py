@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from django.contrib.auth.models import User
 from .models import *
-from .models2 import Company, ItemMaster, ItemVariation, Owner , Sales, Business, StoreStock, storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails , Categories
+from .models2 import Category, Company, ItemMaster, ItemVariation, Owner , Sales, Business, StoreStock, storeMaster , BusinessInventoryMaster , storeInventoryMaster , OwnerDetails , Product , SalesPending,GenBill,SalesRegister , Customer , EmployeeMaster , TransactionDetailsMaster , ReturnSalesPending , EmployeeCredential , EmployeeAuth , SupplierMaster , PurchaseRegister , PurchasePending , PurchaseTransactionDetails , ReturnTransactionDetails
 
 class StoreStockSerializer(serializers.ModelSerializer):
     class Meta:
@@ -147,9 +147,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseTransactionDetails
         fields = '__all__'
-
-
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Categories
+        model = Category
         fields = '__all__'
+

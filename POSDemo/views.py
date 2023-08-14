@@ -275,6 +275,12 @@ def register_view(request):
         return Response({'detail': 'Registration successful'}, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class category(ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+class CategoryDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 class Sales_create(ListCreateAPIView):
     queryset = Sales.objects.all()
     serializer_class = TransactionSerializer
@@ -1525,26 +1531,7 @@ def handle_stock_change(request):
     if request.method == 'POST':
         pass
 
-@api_view(['POST'])
-def handle_product_categories(request):
 
-    if request.method == 'POST':
-        data_dict = clean_dict_to_serialize(dict(request.data))
-        if data_dict['parent'] == '':
-            data_dict.pop('parent')
-        
-        pprint(data_dict)
-        serializer = CategoriesSerializer(data=data_dict)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data_dict)
-        else:
-            serializer_error_dict = dict(serializer.errors)
-            error_list_for_response =[]
-            for error in serializer_error_dict.keys():
-                error_list_for_response.append(serializer_error_dict[error][0])
-            return Response({'error':error_list_for_response})
             
 
 @api_view(['POST'])
